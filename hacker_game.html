@@ -55,26 +55,42 @@
         * { box-sizing: border-box; }
 
         body, html {
-            margin: 0; padding: 0; height: 100vh; overflow: hidden;
+            margin: 0; padding: 0; min-height: 100vh; height: auto; overflow-x: hidden; overflow-y: auto;
             background: transparent !important; /* Let parent canvas bleed through */
             cursor: auto !important; /* Default cursor */
         }
 
         body {
             font-family: 'Outfit', sans-serif; color: var(--text-primary);
-            display: flex; transition: color 0.5s;
+            display: flex; flex-direction: row; transition: color 0.5s;
         }
 
         /* --- LAYOUT --- */
         .sidebar {
-            width: 380px; background: var(--bg-panel);
+            width: 380px; background: var(--bg-panel); flex-shrink: 0;
             backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
             border-right: 1px solid var(--border-light);
             display: flex; flex-direction: column; padding: 40px 32px;
             z-index: 10; box-shadow: var(--shadow-float);
         }
 
-        .main-stage { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        .main-stage { flex-grow: 1; display: flex; flex-direction: column; position: relative; min-width: 0; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column !important; }
+            .sidebar { width: 100% !important; border-right: none; border-bottom: 1px solid var(--border-light); padding: 24px; }
+            .recon-layout { grid-template-columns: 1fr !important; gap: 20px !important; }
+            .scanner-ring { width: 180px !important; height: 180px !important; margin: 0 auto; }
+            .network-map { padding: 30px 10px !important; }
+            .device-node { width: 90px !important; }
+            .device-icon { width: 48px !important; height: 48px !important; }
+            .connection-line { margin: 0 5px !important; }
+            .viewport { padding: 20px !important; }
+            .top-bar { padding: 15px 20px !important; }
+            .bottom-bar { padding: 15px 20px !important; }
+            .wifi-menu { max-width: 100% !important; }
+            .intercept-layout { grid-template-columns: 1fr !important; gap: 20px !important; }
+        }
 
         /* --- SIDEBAR: AI TUTOR --- */
         .tutor-header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }

@@ -124,6 +124,19 @@
         .alert-text { padding: 20px; font-size: 0.9rem; color: #333; }
         .alert-btn { background: #0078D7; color: white; border: none; padding: 10px; cursor: pointer; }
 
+        /* RESPONSIVE MEDIA QUERIES FOR BeEF */
+        @media (max-width: 768px) {
+            .dashboard { width: 100%; height: 100%; border-radius: 0; border: none; }
+            .header { padding: 10px 15px; }
+            .header h1 { font-size: 1.1rem; }
+            .main-area { flex-direction: column; }
+            .sidebar { width: 100%; height: 140px; border-right: none; border-bottom: 1px solid var(--beef-border); overflow-y: auto; }
+            .cmd-grid { grid-template-columns: 1fr; gap: 10px; }
+            .cmd-list { border-right: none; border-bottom: 1px solid var(--beef-border); padding-bottom: 10px; max-height: 180px; }
+            .cmd-exec { padding: 10px 0; }
+            .victim-screen { width: 95vw; height: 75vh; }
+            #harvest-popup { width: 90%; left: 5%; bottom: 10px; right: auto; }
+        }
     </style>
 </head>
 <body>
@@ -167,26 +180,41 @@
                                 <div class="cmd-item">Webcam Access</div>
                                 
                                 <div class="cmd-category">Social Engineering</div>
-                                <div class="cmd-item active">Create Alert Dialog</div>
-                                <div class="cmd-item">Fake Flash Update</div>
-                                <div class="cmd-item">Google Phishing</div>
+                                <div class="cmd-item" id="cmd-alert" onclick="switchCmd('alert')">Create Alert Dialog</div>
+                                <div class="cmd-item" id="cmd-flash" onclick="switchCmd('flash')">Fake Flash Update</div>
+                                <div class="cmd-item active" id="cmd-phish" onclick="switchCmd('phish')">Google Phishing</div>
                                 
                                 <div class="cmd-category">Exploits</div>
                                 <div class="cmd-item">Execute Shellcode</div>
                             </div>
                             
-                            <div class="cmd-exec">
+                            <div class="cmd-exec" id="exec-alert" style="display:none;">
                                 <h2>Create Alert Dialog</h2>
                                 <p class="cmd-desc">This module will display a standard alert dialog box in the victim's hooked browser. This can be used for social engineering or verifying execution.</p>
-                                
                                 <div class="input-group">
                                     <label>Alert Text:</label>
                                     <input type="text" id="alert-input" value="Your session has expired. Please log in again.">
                                 </div>
-                                
-                                <button class="btn-exec" onclick="executePayload()">Execute Payload</button>
-                                
-                                <div id="exec-status" style="margin-top:20px; color:var(--beef-green); display:none; font-weight:bold;">
+                                <button class="btn-exec" onclick="executeAlert()">Execute Payload</button>
+                                <div id="alert-status" style="margin-top:20px; color:var(--beef-green); display:none; font-weight:bold;">
+                                    [+] Command sent to victim successfully.
+                                </div>
+                            </div>
+
+                            <div class="cmd-exec" id="exec-flash" style="display:none;">
+                                <h2>Fake Flash Update</h2>
+                                <p class="cmd-desc">Prompts the hooked user to install a critical Adobe Flash Player security patch, simulating a classic drive-by social engineering workflow.</p>
+                                <button class="btn-exec" onclick="executeFlash()">Execute Payload</button>
+                                <div id="flash-status" style="margin-top:20px; color:var(--beef-green); display:none; font-weight:bold;">
+                                    [+] Command sent to victim successfully.
+                                </div>
+                            </div>
+
+                            <div class="cmd-exec" id="exec-phish">
+                                <h2>Google Phishing</h2>
+                                <p class="cmd-desc">Injects a full-screen, responsive Google Account sign-in overlay inside the victim's tab to demonstrate credential harvesting risks.</p>
+                                <button class="btn-exec" onclick="executePhish()">Execute Payload</button>
+                                <div id="phish-status" style="margin-top:20px; color:var(--beef-green); display:none; font-weight:bold;">
                                     [+] Command sent to victim successfully.
                                 </div>
                             </div>
@@ -205,15 +233,73 @@
         <div class="victim-screen">
             <div class="v-browser-bar">
                 <div class="v-dot"></div><div class="v-dot"></div><div class="v-dot"></div>
-                <div class="v-url">http://vulnerable-campus-site.com</div>
+                <div class="v-url" id="v-url">http://vulnerable-campus-site.com</div>
             </div>
-            <div class="v-content">
-                <h1>Campus Portal</h1>
+            
+            <div class="v-content" id="v-content" style="position:relative; width:100%; height:100%; overflow:hidden;">
+                <!-- Default Content -->
+                <div id="v-default-portal" style="display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%; height:100%; text-align:center; padding: 20px;">
+                    <h1 style="margin-bottom: 10px;">Campus Student Portal</h1>
+                    <p style="color:#666; max-width:400px; font-size:0.95rem;">Log in to access your course grades, class schedules, and university resource portals.</p>
+                </div>
+
+                <!-- ALERT BOX -->
+                <div class="alert-box" id="v-alert">
+                    <div class="alert-text" id="v-alert-text"></div>
+                    <button class="alert-btn" onclick="closeVictim()">OK</button>
+                </div>
+
+                <!-- FLASH DIALOG -->
+                <div id="v-flash" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:320px; background:#F1F1F1; border:1px solid #999; border-radius:6px; box-shadow:0 4px 15px rgba(0,0,0,0.3); font-family:sans-serif; text-align:left; overflow:hidden;">
+                    <div style="background:#222; color:#FFF; padding:10px; font-size:0.9rem; font-weight:bold; display:flex; align-items:center; gap:8px;">
+                        ⚠️ Update Required
+                    </div>
+                    <div style="padding:15px; font-size:0.85rem; color:#333; line-height:1.4;">
+                        A critical security update is required for <b>Adobe Flash Player</b> to load the interactive campus modules.
+                    </div>
+                    <div style="display:flex; border-top:1px solid #CCC; background:#E5E5E5;">
+                        <button onclick="closeVictim()" style="flex:1; border:none; padding:12px; background:transparent; font-size:0.85rem; border-right:1px solid #CCC; cursor:pointer; font-weight:bold; color:#005A9C;">Install Update</button>
+                        <button onclick="closeVictim()" style="flex:1; border:none; padding:12px; background:transparent; font-size:0.85rem; cursor:pointer; color:#555;">Later</button>
+                    </div>
+                </div>
+
+                <!-- GOOGLE PHISHING SCREEN -->
+                <div id="v-phish" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:white; z-index:90; flex-direction:column; justify-content:center; align-items:center; font-family: 'Roboto', arial, sans-serif;">
+                    <div style="width:360px; padding:40px; border:1px solid #dadce0; border-radius:8px; display:flex; flex-direction:column; align-items:center; text-align:center; box-sizing:border-box;">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" style="width:75px; height:24px; margin-bottom:16px;">
+                        <h2 style="font-size:1.5rem; font-weight:400; color:#202124; margin:0 0 8px 0; font-family:inherit;">Sign in</h2>
+                        <p style="font-size:1rem; color:#202124; margin:0 0 24px 0;">to continue to Google Drive</p>
+                        
+                        <div style="width:100%; display:flex; flex-direction:column; gap:16px; text-align:left; box-sizing:border-box;">
+                            <div>
+                                <label style="display:block; font-size:0.85rem; color:#1a73e8; margin-bottom:4px; font-weight:500;">Email or phone</label>
+                                <input type="text" id="phish-email" value="student@campus.edu" style="width:100%; padding:10px; border:2px solid #1a73e8; border-radius:4px; font-size:1rem; box-sizing:border-box;" readonly>
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:0.85rem; color:#5f6368; margin-bottom:4px;">Enter your password</label>
+                                <input type="password" id="phish-password" placeholder="••••••••" style="width:100%; padding:10px; border:1px solid #dadce0; border-radius:4px; font-size:1rem; box-sizing:border-box;">
+                            </div>
+                        </div>
+                        
+                        <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-top:26px;">
+                            <span style="color:#1a73e8; font-size:0.875rem; font-weight:500; cursor:pointer;">Forgot password?</span>
+                            <button onclick="submitPhishCredentials()" style="background:#1a73e8; color:white; border:none; padding:10px 24px; border-radius:4px; font-weight:500; font-size:0.875rem; cursor:pointer;">Next</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="alert-box" id="v-alert">
-                <div class="alert-text" id="v-alert-text"></div>
-                <button class="alert-btn" onclick="closeVictim()">OK</button>
-            </div>
+        </div>
+    </div>
+
+    <!-- CREDENTIAL LOGGER POPUP (For demonstrating harvesting) -->
+    <div id="harvest-popup" style="display:none; position:fixed; bottom:20px; right:20px; width:340px; background:#1e1e24; border:2px solid var(--beef-primary); border-radius:8px; padding:16px; color:white; z-index:110; font-family:'Outfit', sans-serif; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+        <div style="color:var(--beef-primary); font-weight:bold; font-size:0.9rem; text-transform:uppercase; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+            <span>⚠️ Credentials Harvested!</span>
+            <span onclick="this.parentElement.parentElement.style.display='none'" style="cursor:pointer; font-size:1.1rem;">&times;</span>
+        </div>
+        <div style="font-size:0.85rem; line-height:1.5;">
+            <div style="margin-bottom:4px;"><b>Email:</b> <span id="logged-email">student@campus.edu</span></div>
+            <div><b>Password:</b> <span id="logged-pass" style="color:#F43F5E; font-family:monospace; font-weight:bold;">123456</span></div>
         </div>
     </div>
 
@@ -228,21 +314,82 @@
             document.getElementById('module-view').style.display = 'flex';
         }
 
-        function executePayload() {
+        function switchCmd(type) {
+            document.querySelectorAll('.cmd-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.cmd-exec').forEach(el => el.style.display = 'none');
+            
+            if (type === 'alert') {
+                document.getElementById('cmd-alert').classList.add('active');
+                document.getElementById('exec-alert').style.display = 'block';
+            } else if (type === 'flash') {
+                document.getElementById('cmd-flash').classList.add('active');
+                document.getElementById('exec-flash').style.display = 'block';
+            } else if (type === 'phish') {
+                document.getElementById('cmd-phish').classList.add('active');
+                document.getElementById('exec-phish').style.display = 'block';
+            }
+        }
+
+        function executeAlert() {
             const text = document.getElementById('alert-input').value;
-            document.getElementById('exec-status').style.display = 'block';
+            document.getElementById('alert-status').style.display = 'block';
             
             setTimeout(() => {
+                resetVictimScreen();
                 document.getElementById('victim-modal').style.display = 'flex';
                 document.getElementById('v-alert').style.display = 'flex';
                 document.getElementById('v-alert-text').innerText = text;
-            }, 1000);
+            }, 800);
+        }
+
+        function executeFlash() {
+            document.getElementById('flash-status').style.display = 'block';
+            
+            setTimeout(() => {
+                resetVictimScreen();
+                document.getElementById('victim-modal').style.display = 'flex';
+                document.getElementById('v-flash').style.display = 'block';
+            }, 800);
+        }
+
+        function executePhish() {
+            document.getElementById('phish-status').style.display = 'block';
+            
+            setTimeout(() => {
+                resetVictimScreen();
+                document.getElementById('v-url').innerText = 'https://accounts.google.com/signin/v2/identifier';
+                document.getElementById('victim-modal').style.display = 'flex';
+                document.getElementById('v-default-portal').style.display = 'none';
+                document.getElementById('v-phish').style.display = 'flex';
+            }, 800);
+        }
+
+        function submitPhishCredentials() {
+            const email = document.getElementById('phish-email').value;
+            const pass = document.getElementById('phish-password').value || "NoPasswordEntered";
+            
+            // Show credential harvest logger popup
+            document.getElementById('logged-email').innerText = email;
+            document.getElementById('logged-pass').innerText = pass;
+            document.getElementById('harvest-popup').style.display = 'block';
+
+            closeVictim();
+        }
+
+        function resetVictimScreen() {
+            document.getElementById('v-url').innerText = 'http://vulnerable-campus-site.com';
+            document.getElementById('v-default-portal').style.display = 'flex';
+            document.getElementById('v-alert').style.display = 'none';
+            document.getElementById('v-flash').style.display = 'none';
+            document.getElementById('v-phish').style.display = 'none';
         }
 
         function closeVictim() {
             document.getElementById('victim-modal').style.display = 'none';
-            document.getElementById('v-alert').style.display = 'none';
-            document.getElementById('exec-status').style.display = 'none';
+            resetVictimScreen();
+            document.getElementById('alert-status').style.display = 'none';
+            document.getElementById('flash-status').style.display = 'none';
+            document.getElementById('phish-status').style.display = 'none';
         }
     </script>
 </body>
