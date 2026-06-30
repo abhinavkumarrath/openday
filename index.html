@@ -545,7 +545,13 @@
                 const currentTheme = document.documentElement.getAttribute('data-theme');
                 try { gameIframe.contentWindow.postMessage({ theme: currentTheme }, '*'); } catch(e) {}
             };
-            gameIframe.src = source;
+            
+            // Resolve path relative to /openday subpath if proxy hosted
+            let resolvedSource = source;
+            if (window.location.pathname.startsWith('/openday') && !source.startsWith('/openday')) {
+                resolvedSource = '/openday/' + source;
+            }
+            gameIframe.src = resolvedSource;
 
             setTimeout(() => {
                 if (modalLoader.style.display !== 'none') {
