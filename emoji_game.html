@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Guesser</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-panel: rgba(255, 255, 255, 0.85);
+            --bg-panel-solid: #FFFFFF;
+            --border-light: rgba(0, 0, 0, 0.1);
+            --border-strong: rgba(0, 0, 0, 0.2);
+            --border-glow: rgba(79, 70, 229, 0.3);
+            
+            --text-primary: #09090B;
+            --text-secondary: #52525B;
+            --text-tertiary: #A3A3A3;
+            
+            --accent-brand: #4F46E5;
+            --accent-bright: #3B82F6;
+            --accent-red: #EF4444;
+            --accent-green: #10B981;
+            
+            --shadow-float: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-panel: rgba(9, 9, 11, 0.4);
+            --bg-panel-solid: rgba(18, 18, 20, 0.7);
+            --border-light: rgba(255, 255, 255, 0.1);
+            --border-strong: rgba(255, 255, 255, 0.2);
+            --border-glow: rgba(56, 189, 248, 0.3);
+            
+            --text-primary: #FAFAFA;
+            --text-secondary: #A1A1AA;
+            --text-tertiary: #71717A;
+            
+            --accent-brand: #38BDF8;
+            --accent-bright: #818CF8;
+            
+            --shadow-float: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; min-height: 100vh; overflow-x: hidden; overflow-y: auto;
+            background: transparent !important;
+            font-family: 'Outfit', sans-serif; color: var(--text-primary);
+            display: grid; place-items: center;
+        }
+
+        .game-container {
+            width: 90%; max-width: 800px; height: auto; max-height: 95vh;
+            margin: auto; display: flex; flex-direction: column; overflow: visible;
+            transition: all 0.5s ease;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        /* HEADER */
+        .game-header {
+            padding: 24px 32px; border-bottom: 1px solid var(--border-light);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header-title { font-weight: 900; font-size: 1.5rem; letter-spacing: -0.02em; }
+        .header-title span { color: var(--accent-brand); }
+
+        .score-badge {
+            background: var(--bg-panel-solid); border: 1px solid var(--border-light);
+            padding: 8px 16px; border-radius: 99px; font-weight: 700;
+            display: flex; align-items: center; gap: 8px; font-size: 0.95rem;
+        }
+
+        /* SCENES */
+        .scene {
+            display: none; flex-direction: column;
+            padding: 32px 40px; justify-content: center; align-items: center;
+            position: relative;
+        }
+        .scene.active { display: flex; }
+
+        /* START SCENE */
+        .start-title { font-size: 2.5rem; font-weight: 900; margin-bottom: 16px; text-align: center; }
+        .start-desc { font-size: 1.1rem; color: var(--text-secondary); text-align: center; max-width: 500px; margin-bottom: 40px; }
+        
+        .mode-btn-container { display: flex; gap: 24px; width: 100%; max-width: 500px; }
+        .mode-btn {
+            flex: 1; padding: 24px; border-radius: 16px; border: 1px solid var(--border-strong);
+            background: var(--bg-panel-solid); color: var(--text-primary); font-family: inherit;
+            font-size: 1.25rem; font-weight: 700; cursor: pointer; transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+        }
+        .mode-btn:hover {
+            border-color: var(--accent-brand); transform: translateY(-5px);
+            box-shadow: 0 10px 25px var(--border-glow);
+        }
+        .mode-icon { font-size: 3rem; }
+
+        /* PLAY SCENE */
+        .game-stats {
+            width: 100%; display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px; font-weight: 700; font-size: 1.1rem;
+        }
+        .streak-count { color: var(--accent-bright); }
+        .round-indicator { color: var(--text-secondary); }
+
+        .timer-container {
+            width: 100%; height: 6px; background: var(--border-light);
+            border-radius: 3px; overflow: hidden; margin-bottom: 24px;
+        }
+        .timer-bar {
+            height: 100%; width: 100%; background: linear-gradient(90deg, var(--accent-brand), var(--accent-bright));
+            transform-origin: left; transition: transform 0.1s linear;
+        }
+
+        .emoji-display {
+            font-size: clamp(3.5rem, 8vh, 5rem); margin-bottom: 24px; text-align: center;
+            letter-spacing: 0.1em; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
+            animation: float 4s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .options-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; max-width: 600px;
+        }
+        .option-btn {
+            padding: 14px 20px; border-radius: 12px; border: 1px solid var(--border-strong);
+            background: var(--bg-panel-solid); color: var(--text-primary); font-family: inherit;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+            text-align: center;
+        }
+        .option-btn:hover {
+            border-color: var(--accent-brand); transform: scale(1.02);
+            box-shadow: 0 4px 15px var(--border-glow);
+        }
+        .option-btn.correct {
+            background: var(--accent-green) !important; color: white !important;
+            border-color: var(--accent-green) !important;
+        }
+        .option-btn.wrong {
+            background: var(--accent-red) !important; color: white !important;
+            border-color: var(--accent-red) !important;
+        }
+
+        /* GAME OVER SCENE */
+        .over-badge { font-size: 4rem; margin-bottom: 16px; }
+        .over-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 8px; }
+        .over-subtitle { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 32px; }
+        
+        .over-stats {
+            display: flex; gap: 40px; margin-bottom: 40px;
+        }
+        .stat-box {
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .stat-value { font-size: 2rem; font-weight: 900; color: var(--accent-brand); }
+        .stat-label { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+
+        .btn-restart {
+            padding: 14px 32px; border-radius: 99px; border: none;
+            background: var(--accent-brand); color: #FFFFFF; font-family: inherit;
+            font-weight: 700; font-size: 1.1rem; cursor: pointer; transition: 0.3s;
+        }
+        .btn-restart:hover {
+            background: var(--accent-bright);
+            transform: scale(1.05); box-shadow: 0 5px 15px var(--border-glow);
+        }
+
+        /* RESPONSIVE MEDIA QUERIES */
+        @media (max-width: 600px) {
+            .game-container { width: 95%; max-height: 98vh; }
+            .scene { padding: 24px 16px; }
+            .start-title { font-size: 1.8rem; }
+            .mode-btn-container { flex-direction: column; gap: 12px; }
+            .mode-btn { padding: 16px; font-size: 1.1rem; }
+            .mode-icon { font-size: 2rem; }
+            .options-grid { grid-template-columns: 1fr; gap: 10px; }
+            .option-btn { padding: 12px 16px; font-size: 0.95rem; }
+            .over-title { font-size: 1.8rem; }
+            .over-stats { gap: 20px; }
+        }
+
+        /* PARTICLE CANVAS */
+        #particle-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- HEADER -->
+        <div class="game-header">
+            <div class="header-title">EMOJI<span>.GUESSER</span></div>
+            <div class="score-badge">🏆 <span id="header-score">0</span></div>
+        </div>
+
+        <!-- START SCENE -->
+        <div class="scene active" id="start-scene">
+            <h2 class="start-title">Decipher the Emojis!</h2>
+            <p class="start-desc">Test your pop-culture intelligence. Choose a category below and guess the movie or song before the timer runs out!</p>
+            <div class="mode-btn-container">
+                <button class="mode-btn" onclick="startGame('movies')">
+                    <span class="mode-icon">🎬</span>
+                    <span>Movies</span>
+                </button>
+                <button class="mode-btn" onclick="startGame('songs')">
+                    <span class="mode-icon">🎵</span>
+                    <span>Songs</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- PLAY SCENE -->
+        <div class="scene" id="play-scene">
+            <canvas id="particle-canvas"></canvas>
+            
+            <div class="game-stats">
+                <div class="round-indicator">ROUND <span id="round-current">1</span>/10</div>
+                <div class="streak-count" id="streak-display" style="display:none;">🔥 STREAK: <span id="streak-val">0</span></div>
+            </div>
+
+            <div class="timer-container">
+                <div class="timer-bar" id="timer-bar"></div>
+            </div>
+
+            <div class="emoji-display" id="emoji-display">🕸️🕷️🦸‍♂️</div>
+
+            <div class="options-grid" id="options-grid">
+                <button class="option-btn">Option 1</button>
+                <button class="option-btn">Option 2</button>
+                <button class="option-btn">Option 3</button>
+                <button class="option-btn">Option 4</button>
+            </div>
+        </div>
+
+        <!-- GAME OVER SCENE -->
+        <div class="scene" id="over-scene">
+            <div class="over-badge" id="over-badge">🎓</div>
+            <h2 class="over-title" id="over-title">Decent Try!</h2>
+            <p class="over-subtitle" id="over-rank">Your Rank: Emoji Novice</p>
+
+            <div class="over-stats">
+                <div class="stat-box">
+                    <span class="stat-value" id="final-score">0</span>
+                    <span class="stat-label">Total Score</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="peak-streak">0</span>
+                    <span class="stat-label">Peak Streak</span>
+                </div>
+            </div>
+
+            <button class="btn-restart" onclick="showStartScreen()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Database
+        const db = {
+            movies: [
+                { emoji: "🚂❤️💃", answer: "Dilwale Dulhania Le Jayenge", options: ["Dilwale Dulhania Le Jayenge", "Kuch Kuch Hota Hai", "Devdas", "Dil Chahta Hai"] },
+                { emoji: "3️⃣🤓🎓", answer: "3 Idiots", options: ["3 Idiots", "Chhichhore", "Student of the Year", "Taare Zameen Par"] },
+                { emoji: "🏏🇬🇧🌾", answer: "Lagaan", options: ["Lagaan", "Dangal", "Chak De! India", "Sultan"] },
+                { emoji: "🤼‍♀️🥇🏆", answer: "Dangal", options: ["Dangal", "Sultan", "Mary Kom", "Bhaag Milkha Bhaag"] },
+                { emoji: "🧠💫🏫", answer: "Taare Zameen Par", options: ["Taare Zameen Par", "Hichki", "3 Idiots", "Black"] },
+                { emoji: "🚂🥥🕶️", answer: "Chennai Express", options: ["Chennai Express", "Happy New Year", "Ra.One", "Dilwale"] },
+                { emoji: "💔🎹🎻", answer: "Devdas", options: ["Devdas", "Aashiqui 2", "Guzaarish", "Kal Ho Naa Ho"] },
+                { emoji: "🕵️‍♂️🔎🔫", answer: "Don", options: ["Don", "Dhoom", "Race", "Agent Vinod"] },
+                { emoji: "🛸👽👋", answer: "Koi... Mil Gaya", options: ["Koi... Mil Gaya", "Krrish", "PK", "Ra.One"] },
+                { emoji: "👻🏰🔑", answer: "Bhool Bhulaiyaa", options: ["Bhool Bhulaiyaa", "Stree", "Go Goa Gone", "Bhoot"] },
+                { emoji: "👮‍♂️🦁🔥", answer: "Singham", options: ["Singham", "Simmba", "Dabangg", "Sooryavanshi"] },
+                { emoji: "👑🗡️🦚", answer: "Padmaavat", options: ["Padmaavat", "Bajirao Mastani", "Jodhaa Akbar", "Mughal-E-Azam"] },
+                { emoji: "🎸🎤💔", answer: "Aashiqui 2", options: ["Aashiqui 2", "Rockstar", "Devdas", "Ae Dil Hai Mushkil"] },
+                { emoji: "🏫🎒🎸", answer: "Student of the Year", options: ["Student of the Year", "Main Hoon Na", "Chhichhore", "2 States"] },
+                { emoji: "👨‍👩‍👧‍👦🏠❤️", answer: "Kabhi Khushi Kabhie Gham", options: ["Kabhi Khushi Kabhie Gham", "Baghban", "Hum Saath Saath Hain", "Dil Dhadakne Do"] },
+                { emoji: "🕶️👮‍♂️🔫", answer: "Dabangg", options: ["Dabangg", "Singham", "Wanted", "Rowdy Rathore"] },
+                { emoji: "⏳⏰💔", answer: "Kal Ho Naa Ho", options: ["Kal Ho Naa Ho", "Kuch Kuch Hota Hai", "Kabhi Alvida Naa Kehna", "Veer-Zaara"] },
+                { emoji: "🎨🚗🏖️", answer: "Dil Chahta Hai", options: ["Dil Chahta Hai", "Zindagi Na Milegi Dobara", "Rock On!!", "Yeh Jawaani Hai Deewani"] },
+                { emoji: "🌌🚀🇮🇳", answer: "Mission Mangal", options: ["Mission Mangal", "Swades", "Zero", "Super 30"] },
+                { emoji: "🛕🕌🕊️", answer: "Bajrangi Bhaijaan", options: ["Bajrangi Bhaijaan", "PK", "Tubelight", "Kick"] },
+                { emoji: "🎒🗺️🏕️", answer: "Yeh Jawaani Hai Deewani", options: ["Yeh Jawaani Hai Deewani", "Zindagi Na Milegi Dobara", "Tamasha", "Love Aaj Kal"] },
+                { emoji: "👩‍⚕️🤵🏥", answer: "Munna Bhai M.B.B.S.", options: ["Munna Bhai M.B.B.S.", "Lage Raho Munna Bhai", "3 Idiots", "Sanju"] },
+                { emoji: "🏃‍♂️🧗‍♂️🏆", answer: "Bhaag Milkha Bhaag", options: ["Bhaag Milkha Bhaag", "Mary Kom", "Sultan", "Gold"] },
+                { emoji: "🏏👦🏆", answer: "MS Dhoni: The Untold Story", options: ["MS Dhoni: The Untold Story", "83", "Lagaan", "Jannat"] },
+                { emoji: "🤵👰🔔", answer: "Hum Aapke Hain Koun..!", options: ["Hum Aapke Hain Koun..!", "Dilwale Dulhania Le Jayenge", "Hum Saath Saath Hain", "Kuch Kuch Hota Hai"] },
+                { emoji: "👗💄👠", answer: "Fashion", options: ["Fashion", "Heroine", "Page 3", "Aisha"] },
+                { emoji: "🚢✈️💃", answer: "Dil Dhadakne Do", options: ["Dil Dhadakne Do", "Zindagi Na Milegi Dobara", "Kapoor & Sons", "Happy New Year"] },
+                { emoji: "🧗‍♂️💥🇮🇳", answer: "Uri: The Surgical Strike", options: ["Uri: The Surgical Strike", "Shershaah", "Border", "Raazi"] },
+                { emoji: "🕵️‍♀️🕌🤫", answer: "Raazi", options: ["Raazi", "Neerja", "Sherni", "Kahani"] },
+                { emoji: "🎻🎶🏛️", answer: "Mohabbatein", options: ["Mohabbatein", "Dil To Pagal Hai", "Kabhi Khushi Gham", "Veer-Zaara"] },
+                { emoji: "🦁🐆🔫", answer: "Sherni", options: ["Sherni", "Roohi", "Kedarnath", "Newton"] },
+                { emoji: "🧗‍♂️⛰️🌨️", answer: "Kedarnath", options: ["Kedarnath", "Kai Po Che", "Fanaa", "Highway"] },
+                { emoji: "👩‍🏫🎒🏫", answer: "Hichki", options: ["Hichki", "Super 30", "Taare Zameen Par", "Hindi Medium"] },
+                { emoji: "👩‍⚕️🍺💔", answer: "Kabir Singh", options: ["Kabir Singh", "Arjun Reddy", "Udta Punjab", "Sanju"] },
+                { emoji: "👨‍👩‍👧🤰👶", answer: "Good Newwz", options: ["Good Newwz", "Badhaai Ho", "Bala", "Housefull 4"] },
+                { emoji: "🧙‍♀️🧟‍♂️🏰", answer: "Roohi", options: ["Roohi", "Stree", "Bhoot", "Bhool Bhulaiyaa 2"] },
+                { emoji: "🕶️🔫💰", answer: "Dhoom", options: ["Dhoom", "Race", "Players", "Don 2"] },
+                { emoji: "🧠💼👨‍🎓", answer: "Super 30", options: ["Super 30", "Mission Mangal", "Hridayam", "Chhichhore"] },
+                { emoji: "🦷🧔🥊", answer: "Sultan", options: ["Sultan", "Dangal", "Sarkar", "Gadar"] },
+                { emoji: "🚂🪓💔", answer: "Gadar", options: ["Gadar", "Border", "Lagaan", "LOC Kargil"] }
+            ],
+            songs: [
+                { emoji: "🚂💃🕺", answer: "Chaiyya Chaiyya", options: ["Chaiyya Chaiyya", "Chammak Challo", "Lungi Dance", "Dard-E-Disco"] },
+                { emoji: "🌾🎻💃", answer: "Tujhe Dekha Toh", options: ["Tujhe Dekha Toh", "Mehndi Laga Ke Rakhna", "Bole Chudiyan", "Suraj Hua Maddham"] },
+                { emoji: "🌧️☔💑", answer: "Tum Hi Ho", options: ["Tum Hi Ho", "Sunn Raha Hai", "Chahun Main Ya Naa", "Muskurane"] },
+                { emoji: "🕶️💃✨", answer: "Kala Chashma", options: ["Kala Chashma", "Kar Gayi Chull", "Abhi Toh Party Shuru Hui Hai", "Saturday Saturday"] },
+                { emoji: "🕶️🥥🕺", answer: "Lungi Dance", options: ["Lungi Dance", "Chammak Challo", "Senorita", "Khaike Pan Banaraswala"] },
+                { emoji: "💃🔴✨", answer: "Chammak Challo", options: ["Chammak Challo", "Criminal", "Dard-E-Disco", "Lungi Dance"] },
+                { emoji: "💃🥳🎉", answer: "Kar Gayi Chull", options: ["Kar Gayi Chull", "Kala Chashma", "Badri Ki Dulhania", "Tamma Tamma Again"] },
+                { emoji: "🧡🏜️🛩️", answer: "Gerua", options: ["Gerua", "Janam Janam", "Zaalima", "Hawayein"] },
+                { emoji: "👀🏹💘", answer: "Nainowale Ne", options: ["Nainowale Ne", "Ghoomar", "Khalibali", "Binte Dil"] },
+                { emoji: "👑💃🎻", answer: "Deewani Mastani", options: ["Deewani Mastani", "Pinga", "Mohe Rang Do Laal", "Ghar More Pardesiya"] },
+                { emoji: "❄️🎨💑", answer: "Dil Diyan Gallan", options: ["Dil Diyan Gallan", "Swag Se Swagat", "Chashni", "Mere Sohneya"] },
+                { emoji: "💃🇪🇸🌹", answer: "Senorita", options: ["Senorita", "Khaabon Ke Parindey", "Ik Junoon", "Uff!"] },
+                { emoji: "🤵👰💔", answer: "Kabira", options: ["Kabira", "Ilahi", "Subhanallah", "Channa Mereya"] },
+                { emoji: "🤪❤️🕺", answer: "Badtameez Dil", options: ["Badtameez Dil", "Dilliwaali Girlfriend", "Balam Pichkari", "Besharm Rang"] },
+                { emoji: "💦🎨🔫", answer: "Balam Pichkari", options: ["Balam Pichkari", "Badtameez Dil", "Rang Barse", "Holi Khel Raghuveera"] },
+                { emoji: "☀️🚫🕺", answer: "Subha Hone Na De", options: ["Subha Hone Na De", "Desi Boyz", "Tu Mera Hero", "Party On My Mind"] },
+                { emoji: "💍👩‍🦰🏙️", answer: "Dilliwaali Girlfriend", options: ["Dilliwaali Girlfriend", "Badtameez Dil", "Balam Pichkari", "Baby Doll"] },
+                { emoji: "🍷💃🌀", answer: "Nashe Si Chadh Gayi", options: ["Nashe Si Chadh Gayi", "Befikre", "Ghungroo", "Ude Dil Befikre"] },
+                { emoji: "💃🌊🏖️", answer: "Ghungroo", options: ["Ghungroo", "Jai Jai Shivshankar", "Nashe Si Chadh Gayi", "Besharam Rang"] },
+                { emoji: "🕺🎨🍹", answer: "Jai Jai Shivshankar", options: ["Jai Jai Shivshankar", "Ghungroo", "Balam Pichkari", "Malhari"] },
+                { emoji: "💘🕌🏔️", answer: "Sweetheart", options: ["Sweetheart", "Namo Namo", "Qaafirana", "Jaan Nisaar"] },
+                { emoji: "💨🚬🍸", answer: "Hookah Bar", options: ["Hookah Bar", "Chinta Ta Chita Chita", "Balma", "Go Go Govinda"] },
+                { emoji: "🐮🌾💃", answer: "Radha", options: ["Radha", "Disco Deewane", "Ishq Wala Love", "Ghar More Pardesiya"] },
+                { emoji: "👑🎉🕺", answer: "First Class", options: ["First Class", "Ghar More Pardesiya", "Kalank Title Track", "Tabaah Ho Gaye"] },
+                { emoji: "🔥💃🎪", answer: "Kamli", options: ["Kamli", "Dhoom Machale", "Malang", "Chikni Chameli"] },
+                { emoji: "🌶️💃🔥", answer: "Chikni Chameli", options: ["Chikni Chameli", "Sheila Ki Jawani", "Munni Badnaam Hui", "Fevicol Se"] },
+                { emoji: "🧸👸✨", answer: "Baby Doll", options: ["Baby Doll", "Chittiyaan Kalaiyaan", "Lovely", "Pink Lips"] },
+                { emoji: "👮‍♂️💃🔥", answer: "Munni Badnaam Hui", options: ["Munni Badnaam Hui", "Sheila Ki Jawani", "Chikni Chameli", "Anarkali Disco Chali"] },
+                { emoji: "👩‍🦰💃🔥", answer: "Sheila Ki Jawani", options: ["Sheila Ki Jawani", "Munni Badnaam Hui", "Chikni Chameli", "Kamli"] },
+                { emoji: "🥳🎉🕺", answer: "Mauja Hi Mauja", options: ["Mauja Hi Mauja", "Nagada Nagada", "Tum Se Hi", "Ye Ishq Haye"] },
+                { emoji: "🍷❤️🕊️", answer: "Pee Loon", options: ["Pee Loon", "Tum Jo Aaye", "Ishq Sufiyana", "Tere Mast Mast Do Nain"] },
+                { emoji: "🌧️🚶‍♂️💭", answer: "Tum Se Hi", options: ["Tum Se Hi", "Mauja Hi Mauja", "Ye Ishq Haye", "Krrish"] },
+                { emoji: "🏔️🇮🇹💑", answer: "Khuda Jaane", options: ["Khuda Jaane", "Bachna Ae Haseeno", "Ahista Ahista", "Zara Sa"] },
+                { emoji: "🏜️🐫💘", answer: "Zaalima", options: ["Zaalima", "Gerua", "Laila Main Laila", "Udi Udi Jaye"] },
+                { emoji: "💔👳‍♂️🎤", answer: "Channa Mereya", options: ["Channa Mereya", "Ae Dil Hai Mushkil", "Bulleya", "The Breakup Song"] },
+                { emoji: "💔🎤🎶", answer: "Ae Dil Hai Mushkil", options: ["Ae Dil Hai Mushkil", "Channa Mereya", "Bulleya", "Bekhayali"] },
+                { emoji: "🚬🥃💔", answer: "Bekhayali", options: ["Bekhayali", "Tujhe Kitna Chahne Lage", "Apna Bana Le", "Mere Sohneya"] },
+                { emoji: "🐺❤️🌲", answer: "Apna Bana Le", options: ["Apna Bana Le", "Kesariya", "Nadiyon Paar", "Thumkeshwari"] },
+                { emoji: "🍁🕌💑", answer: "Kesariya", options: ["Kesariya", "Apna Bana Le", "Deva Deva", "Rasiya"] },
+                { emoji: "🌙🕺💃", answer: "Jhumme Ki Raat", options: ["Jhumme Ki Raat", "Hangover", "Yaar Naa Miley", "Baby Doll"] }
+            ]
+        };
+
+        let currentCategory = [];
+        let currentRound = 0;
+        let score = 0;
+        let streak = 0;
+        let maxStreak = 0;
+        let timeRemaining = 100;
+        let timerInterval = null;
+        let canAnswer = true;
+
+        // Audio Synthesis (Web Audio API)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.4);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'click') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                }
+            } catch(e) {}
+        }
+
+        // Particle Burst Canvas
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 8 + 4;
+                this.speedX = (Math.random() - 0.5) * 8;
+                this.speedY = (Math.random() - 0.5) * 8 - 4;
+                this.color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+                this.opacity = 1;
+                this.gravity = 0.15;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += this.gravity;
+                this.opacity -= 0.02;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function createBurst(x, y) {
+            for (let i = 0; i < 30; i++) {
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = particles.filter(p => p.opacity > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // Game Navigation
+        function showScene(id) {
+            document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function showStartScreen() {
+            playSound('click');
+            score = 0;
+            streak = 0;
+            maxStreak = 0;
+            document.getElementById('header-score').innerText = score;
+            document.getElementById('streak-display').style.display = 'none';
+            showScene('start-scene');
+        }
+
+        function startGame(category) {
+            playSound('click');
+            // Shuffle database set
+            currentCategory = [...db[category]].sort(() => Math.random() - 0.5);
+            currentRound = 0;
+            score = 0;
+            streak = 0;
+            maxStreak = 0;
+            document.getElementById('header-score').innerText = score;
+            document.getElementById('streak-display').style.display = 'none';
+            loadNextQuestion();
+            showScene('play-scene');
+            resizeCanvas();
+        }
+
+        function loadNextQuestion() {
+            if (currentRound >= 10) {
+                gameOver();
+                return;
+            }
+
+            canAnswer = true;
+            currentRound++;
+            document.getElementById('round-current').innerText = currentRound;
+            
+            const question = currentCategory[currentRound - 1];
+            document.getElementById('emoji-display').innerText = question.emoji;
+
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+
+            // Shuffle option choices
+            const shuffledOptions = [...question.options].sort(() => Math.random() - 0.5);
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = (e) => selectAnswer(btn, opt, question.answer, e);
+                grid.appendChild(btn);
+            });
+
+            // Reset and start timer
+            timeRemaining = 100;
+            document.getElementById('timer-bar').style.transform = 'scaleX(1)';
+            
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeRemaining -= 1;
+                document.getElementById('timer-bar').style.transform = `scaleX(${timeRemaining / 100})`;
+                
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeout(question.answer);
+                }
+            }, 100);
+        }
+
+        function selectAnswer(button, selected, correct, event) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            clearInterval(timerInterval);
+
+            if (selected === correct) {
+                playSound('correct');
+                button.classList.add('correct');
+                createBurst(event.clientX, event.clientY);
+                
+                // Add score + speed bonus
+                const speedBonus = Math.floor(timeRemaining / 5);
+                const pointsGained = 100 + speedBonus;
+                score += pointsGained;
+                document.getElementById('header-score').innerText = score;
+
+                // Update Streak
+                streak++;
+                if (streak > maxStreak) maxStreak = streak;
+                if (streak >= 3) {
+                    document.getElementById('streak-val').innerText = streak;
+                    document.getElementById('streak-display').style.display = 'block';
+                }
+            } else {
+                playSound('wrong');
+                button.classList.add('wrong');
+                streak = 0;
+                document.getElementById('streak-display').style.display = 'none';
+
+                // Reveal correct answer
+                const buttons = document.querySelectorAll('.option-btn');
+                buttons.forEach(b => {
+                    if (b.innerText === correct) b.classList.add('correct');
+                });
+            }
+
+            setTimeout(loadNextQuestion, 1500);
+        }
+
+        function handleTimeout(correct) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            playSound('wrong');
+            streak = 0;
+            document.getElementById('streak-display').style.display = 'none';
+
+            // Reveal correct answer
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(b => {
+                if (b.innerText === correct) b.classList.add('correct');
+            });
+
+            setTimeout(loadNextQuestion, 1500);
+        }
+
+        function gameOver() {
+            let badge = "🙃";
+            let rank = "Emoji Rookie";
+            let title = "Nice Try!";
+
+            if (score >= 1200) {
+                badge = "👑";
+                rank = "Emoji Grandmaster";
+                title = "Legendary Score!";
+            } else if (score >= 900) {
+                badge = "🎓";
+                rank = "Emoji Expert";
+                title = "Impressive!";
+            } else if (score >= 600) {
+                badge = "😎";
+                rank = "Emoji Scholar";
+                title = "Well Done!";
+            }
+
+            document.getElementById('over-badge').innerText = badge;
+            document.getElementById('over-title').innerText = title;
+            document.getElementById('over-rank').innerText = `Your Rank: ${rank}`;
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('peak-streak').innerText = maxStreak;
+
+            showScene('over-scene');
+        }
+
+        // Handle parent themes
+        window.addEventListener('message', (event) => {
+            if (event.data.theme) document.documentElement.setAttribute('data-theme', event.data.theme);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSE-IOTCSBT | Build The Future</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* CYBER LIGHT THEME */
+            --bg-base: #F8FAFC;
+            --bg-glass: rgba(255, 255, 255, 0.7);
+            --border-subtle: rgba(15, 23, 42, 0.1);
+            --border-strong: rgba(15, 23, 42, 0.2);
+            --border-glow: rgba(2, 132, 199, 0.3);
+            
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            
+            --accent-cyan: #0ea5e9;
+            --accent-purple: #6366F1;
+            --accent-green: #10B981;
+            --accent-pink: #E11D48;
+            
+            --node-color: rgba(2, 132, 199, 0.6);
+            --line-color: rgba(2, 132, 199, 0.15);
+            --radius-xl: 32px;
+        }
+
+        [data-theme="dark"] {
+            /* CYBER DARK THEME */
+            --bg-base: #030305;
+            --bg-glass: rgba(10, 10, 15, 0.6);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.2);
+            --border-glow: rgba(56, 189, 248, 0.4);
+            
+            --text-primary: #FFFFFF;
+            --text-secondary: #A1A1AA;
+            
+            --accent-cyan: #38BDF8;
+            --accent-purple: #818CF8;
+            --accent-green: #34D399;
+            --accent-pink: #F43F5E;
+            
+            --node-color: rgba(56, 189, 248, 0.7);
+            --line-color: rgba(56, 189, 248, 0.2);
+        }
+
+        /* --- THEME TOGGLE BUTTON --- */
+        .theme-toggle {
+            position: fixed; top: 32px; right: 32px; z-index: 100;
+            background: var(--bg-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle); border-radius: 50%;
+            width: 56px; height: 56px; display: flex; justify-content: center; align-items: center;
+            color: var(--text-primary); cursor: pointer; transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .theme-toggle:hover { transform: scale(1.1) rotate(15deg); border-color: var(--accent-cyan); box-shadow: 0 15px 30px var(--border-glow); }
+        .theme-toggle svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; transition: 0.3s; }
+        
+        [data-theme="dark"] .icon-sun { display: block; }
+        [data-theme="dark"] .icon-moon { display: none; }
+        :root:not([data-theme="dark"]) .icon-sun { display: none; }
+        :root:not([data-theme="dark"]) .icon-moon { display: block; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body, html { width: 100%; cursor: auto; scroll-behavior: smooth; background-color: var(--bg-base); color: var(--text-primary); font-family: 'Outfit', sans-serif; overflow-x: hidden; }
+
+        /* --- INTERACTIVE CANVAS BACKGROUND --- */
+        #network-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; pointer-events: none; }
+        .bg-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, transparent 0%, var(--bg-base) 100%); z-index: -1; pointer-events: none; }
+
+        /* --- CINEMATIC SCROLL PATH --- */
+        .scroll-path-container { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 2px; height: 100vh; background: var(--border-subtle); z-index: 0; pointer-events: none; opacity: 0.3; }
+        .scroll-path-fill { width: 100%; height: 0%; background: linear-gradient(to bottom, var(--accent-cyan), var(--accent-purple)); box-shadow: 0 0 20px var(--accent-cyan); transition: height 0.1s; }
+
+        /* --- CONTENT WRAPPER & ANIMATIONS --- */
+        .content-wrapper { position: relative; z-index: 10; width: 100%; }
+        
+        /* Reveal Animations */
+        .reveal { opacity: 0; transform: translateY(60px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        .reveal-scale { opacity: 0; transform: scale(0.9); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal-scale.active { opacity: 1; transform: scale(1); }
+
+        /* --- HERO SECTION --- */
+        .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 5vw; position: relative; }
+        
+        .hero-tag {
+            display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 1px solid var(--border-strong); border-radius: 99px;
+            font-size: 0.9rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; text-transform: uppercase; margin-bottom: 40px;
+            background: var(--bg-glass); backdrop-filter: blur(10px); box-shadow: 0 0 20px var(--border-glow); color: var(--accent-cyan);
+        }
+        .hero-tag .pulse { width: 8px; height: 8px; background: var(--accent-cyan); border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        @keyframes ping { 75%, 100% { transform: scale(3); opacity: 0; } }
+
+        .hero-title { font-size: clamp(4rem, 9vw, 8rem); font-weight: 900; line-height: 0.95; letter-spacing: -0.04em; margin-bottom: 30px; }
+        .text-gradient { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .hero-desc { font-size: clamp(1.2rem, 2vw, 1.5rem); color: var(--text-secondary); line-height: 1.6; font-weight: 400; max-width: 800px; margin-bottom: 50px; }
+
+        .btn-glow {
+            padding: 18px 40px; font-size: 1.1rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+            border-radius: 99px; background: var(--text-primary); color: var(--bg-base); border: none; cursor: pointer; text-decoration: none;
+            box-shadow: 0 0 30px rgba(255,255,255,0.3); transition: 0.3s;
+        }
+        .btn-glow:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 0 50px rgba(255,255,255,0.6); }
+
+        /* --- BENEFITS SECTION --- */
+        .section-container { max-width: 1400px; margin: 0 auto; padding: 140px 5vw; }
+        .section-header { text-align: center; margin-bottom: 80px; }
+        .section-title { font-size: 4rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 20px; }
+        .section-subtitle { font-size: 1.2rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 2px; }
+
+        .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px; }
+        .benefit-card {
+            background: var(--bg-glass); backdrop-filter: blur(24px); border: 1px solid var(--border-strong);
+            border-radius: 24px; padding: 48px 32px; text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); transition: 0.5s; position: relative; overflow: hidden;
+        }
+        .benefit-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple)); transform: scaleX(0); transition: 0.5s; transform-origin: left; }
+        .benefit-card:hover { transform: translateY(-15px); border-color: var(--accent-cyan); box-shadow: 0 30px 60px rgba(56, 189, 248, 0.2); }
+        .benefit-card:hover::before { transform: scaleX(1); }
+        
+        .b-icon { width: 72px; height: 72px; margin: 0 auto 32px auto; color: var(--accent-cyan); filter: drop-shadow(0 0 15px var(--border-glow)); transition: 0.5s; }
+        .benefit-card:hover .b-icon { transform: scale(1.1) rotate(5deg); }
+        .benefit-card h3 { font-size: 1.8rem; font-weight: 800; margin-bottom: 16px; }
+        .benefit-card p { font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6; }
+
+        /* --- 3D PROJECT SHOWCASE CAROUSEL --- */
+        .projects-section { padding: 120px 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(20px); border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); overflow: hidden; }
+        
+        .carousel-container { height: 500px; position: relative; display: flex; justify-content: center; align-items: center; perspective: 1000px; margin-top: 60px; }
+        
+        .project-card {
+            position: absolute; width: 400px; height: 450px; background: var(--bg-glass);
+            border: 1px solid var(--border-strong); border-radius: 24px; padding: 40px;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+            background-size: cover; background-position: center; overflow: hidden;
+        }
+        .project-card::after { 
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: linear-gradient(to top, var(--bg-base) 0%, var(--bg-base) 15%, transparent 70%); z-index: 1; transition: 0.5s;
+        }
+        
+        .p-content { position: relative; z-index: 2; }
+        .p-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; margin-bottom: 12px; }
+        .project-card h3 { font-size: 2.2rem; font-weight: 900; margin-bottom: 16px; line-height: 1.1; }
+        .project-card p { font-size: 1rem; color: var(--text-secondary); line-height: 1.5; }
+
+        /* 3D Positions */
+        .card-center { transform: translateX(0) scale(1) translateZ(0); opacity: 1; z-index: 10; border-color: var(--accent-cyan); box-shadow: 0 0 50px rgba(56, 189, 248, 0.3); }
+        .card-left { transform: translateX(-350px) scale(0.8) translateZ(-100px) rotateY(15deg); opacity: 0.4; z-index: 5; }
+        .card-right { transform: translateX(350px) scale(0.8) translateZ(-100px) rotateY(-15deg); opacity: 0.4; z-index: 5; }
+        
+        .carousel-nav { display: flex; justify-content: center; gap: 24px; margin-top: 40px; }
+        .c-btn { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--bg-glass); color: var(--text-primary); display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.3s; }
+        .c-btn:hover { background: var(--text-primary); color: var(--bg-base); box-shadow: 0 0 20px rgba(255,255,255,0.3); transform: scale(1.1); }
+        .c-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+        /* --- INTERACTIVE ARCADE (GAMES) --- */
+        .arcade-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px; margin-top: 40px; }
+        
+        .arcade-card {
+            border-radius: var(--radius-xl); padding: 80px 48px; min-height: 450px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+            position: relative; overflow: hidden; border: 1px solid var(--border-strong); cursor: pointer;
+            background: var(--bg-glass); box-shadow: 0 30px 60px rgba(0,0,0,0.4); transition: 0.5s;
+        }
+        .arcade-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: conic-gradient(from 0deg, transparent 70%, var(--accent-cyan) 100%);
+            animation: spin 6s linear infinite; opacity: 0; transition: 0.5s; z-index: 0;
+        }
+        .arcade-card:hover { transform: translateY(-10px); border-color: transparent; }
+        .arcade-card:hover::before { opacity: 0.5; }
+        .arcade-inner { position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px; background: var(--bg-base); border-radius: calc(var(--radius-xl) - 2px); z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 48px; transition: background 0.5s; }
+        
+        .arcade-icon { width: 80px; height: 80px; margin-bottom: 24px; color: var(--text-primary); transition: 0.5s; }
+        .arcade-card:hover .arcade-icon { color: var(--accent-cyan); transform: scale(1.1); filter: drop-shadow(0 0 20px var(--border-glow)); }
+        
+        .arcade-inner h3 { font-size: 2.5rem; font-weight: 900; margin-bottom: 16px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; z-index: 2; }
+        .arcade-inner p { font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; z-index: 2; }
+
+        .btn-play {
+            background: transparent; color: var(--text-primary); border: 2px solid var(--border-strong);
+            padding: 14px 32px; border-radius: 99px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase; transition: 0.3s; z-index: 2; display: flex; align-items: center; gap: 12px;
+        }
+        .arcade-card:hover .btn-play { background: var(--text-primary); color: var(--bg-base); border-color: var(--text-primary); box-shadow: 0 0 30px rgba(255,255,255,0.4); }
+
+        /* --- FULLSCREEN MODAL FOR GAMES --- */
+        .game-modal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg-glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            z-index: 200; display: flex; flex-direction: column;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+        }
+        .game-modal.active { opacity: 1; pointer-events: auto; }
+        
+        .modal-header { padding: 32px 5vw; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); background: rgba(0,0,0,0.4); }
+        .modal-title { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 2px; }
+        .btn-close-modal {
+            background: var(--text-primary); color: var(--bg-base); border: none; padding: 12px 32px; border-radius: 99px;
+            font-family: 'JetBrains Mono', monospace; font-weight: 700; cursor: pointer; transition: 0.3s; text-transform: uppercase;
+        }
+        .btn-close-modal:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,255,255,0.5); }
+
+        .modal-content { flex-grow: 1; position: relative; }
+        .modal-content iframe { width: 100%; height: 100%; border: none; background: transparent; }
+        
+        .modal-loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 16px; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1.2rem; }
+        .spinner { width: 32px; height: 32px; border: 3px solid var(--border-strong); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <!-- INTERACTIVE BACKGROUND -->
+    <canvas id="network-canvas"></canvas>
+    <div class="bg-overlay"></div>
+
+    <!-- THE SCROLL PATH -->
+    <div class="scroll-path-container">
+        <div class="scroll-path-fill" id="scroll-path"></div>
+    </div>
+
+    <!-- THEME TOGGLE -->
+    <button id="theme-toggle" class="theme-toggle hoverable" onclick="toggleTheme()" title="Toggle Theme">
+        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+    </button>
+
+    <!-- MAIN CONTENT -->
+    <main class="content-wrapper">
+        
+        <!-- HERO -->
+        <section class="hero reveal-scale">
+            <div class="hero-tag hoverable"><div class="pulse"></div> CSE-IOTCSBT Branch</div>
+            <h1 class="hero-title">
+                Build The <br>
+                <span class="text-gradient">Future of Tech.</span>
+            </h1>
+            <p class="hero-desc">The future isn't written on a whiteboard. It’s built with connected devices, secured by ethical hackers, and decentralized on the blockchain. Welcome to the coolest branch in Computer Science.</p>
+            <a href="#arcade" class="btn-glow hoverable">Enter The Arcade</a>
+        </section>
+
+        <!-- BENEFITS SECTION (Why Join Us?) -->
+        <section class="section-container">
+            <div class="section-header reveal">
+                <div class="section-subtitle">Why Choose Us?</div>
+                <h2 class="section-title">Not Your Average Degree</h2>
+            </div>
+            
+            <div class="benefits-grid">
+                <div class="benefit-card reveal hoverable">
+                    <svg class="b-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                    <h3>High-Demand Careers</h3>
+                    <p>Companies are desperate for experts who can secure networks and build smart devices. Graduate into a field with massive growth and high salaries.</p>
+                </div>
+                
+                <div class="benefit-card reveal hoverable" style="transition-delay: 0.2s;">
+                    <svg class="b-icon" style="color:var(--accent-purple);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line></svg>
+                    <h3 style="color:var(--accent-purple);">Build Cool Gadgets</h3>
+                    <p>Don't just write code on a screen. Work with physical hardware, drones, sensors, and smart home tech in our cutting-edge IoT labs.</p>
+                </div>
+
+                <div class="benefit-card reveal hoverable" style="transition-delay: 0.4s;">
+                    <svg class="b-icon" style="color:var(--accent-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    <h3 style="color:var(--accent-green);">The Hacker Mindset</h3>
+                    <p>Learn how cybercriminals think so you can stop them. Master ethical hacking, penetration testing, and digital forensics.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3D PROJECT SHOWCASE -->
+        <section class="projects-section">
+            <div class="section-container" style="padding: 0 5vw;">
+                <div class="section-header reveal">
+                    <div class="section-subtitle">Student Showcase</div>
+                    <h2 class="section-title">What Will You Build?</h2>
+                </div>
+
+                <div class="carousel-container reveal">
+                    <!-- Project 1 (Left) -->
+                    <div class="project-card card-left" id="card-0" style="background-image: url('https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&q=80');">
+                        <div class="p-content">
+                            <div class="p-tag">IOT & HARDWARE</div>
+                            <h3>Smart Campus Energy Grid</h3>
+                            <p>A centralized IoT sensor network built by students to monitor and optimize electricity usage across all university buildings.</p>
+                        </div>
+                    </div>
+
+                    <!-- Project 2 (Center) -->
+                    <div class="project-card card-center" id="card-1" style="background-image: url('https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&q=80');">
+                        <div class="p-content">
+                            <div class="p-tag" style="color:var(--accent-cyan);">CYBER RESEARCH</div>
+                            <h3>Automated Malware Sandbox</h3>
+                            <p>A secure, isolated academic environment designed to safely execute, analyze, and reverse-engineer sophisticated computer viruses.</p>
+                        </div>
+                    </div>
+
+                    <!-- Project 3 (Right) -->
+                    <div class="project-card card-right" id="card-2" style="background-image: url('https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&q=80');">
+                        <div class="p-content">
+                            <div class="p-tag" style="color:var(--accent-purple);">BLOCKCHAIN</div>
+                            <h3>Immutable Academic Transcripts</h3>
+                            <p>A decentralized application that issues tamper-proof, universally verifiable degree certificates on the blockchain for graduating students.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-nav reveal">
+                    <button class="c-btn hoverable" onclick="rotateCarousel(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <button class="c-btn hoverable" onclick="rotateCarousel(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTERACTIVE ARCADE (GAMES) -->
+        <section id="arcade" class="section-container">
+            <div class="section-header reveal">
+                <div class="section-subtitle">Interactive Arcade</div>
+                <h2 class="section-title">Play & Learn</h2>
+                <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-size: 1.1rem;">Step up to the console. Experience real-world hacking scenarios and test your digital knowledge in our interactive modules.</p>
+            </div>
+            
+            <div class="arcade-grid">
+                
+                <div class="arcade-card reveal hoverable" onclick="openGame('hacker_game.html', 'Threat Simulator')">
+                    <div class="arcade-inner">
+                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M6 8l4 4-4 4M12 16h6"></path></svg>
+                        <h3>Threat Simulator</h3>
+                        <p>Experience an interactive, step-by-step breakdown of how network vulnerabilities are exploited in real time.</p>
+                        <button class="btn-play">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            Start Mission
+                        </button>
+                    </div>
+                </div>
+
+                <div class="arcade-card reveal hoverable" style="transition-delay: 0.2s;" onclick="openGame('quiz_wheel.html', 'Cyber Quiz Engine')">
+                    <div class="arcade-inner">
+                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <h3>Cyber Quiz Wheel</h3>
+                        <p>Test your knowledge with 50 tailored cybersecurity questions. Spin the interactive wheel to challenge yourself.</p>
+                        <button class="btn-play">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            Spin The Wheel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="arcade-card reveal hoverable" style="transition-delay: 0.4s;" onclick="openGame('wifite_sim.html', 'Wifite Terminal')">
+                    <div class="arcade-inner">
+                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                        <h3>Wifite</h3>
+                        <p>Simulate an automated wireless attack. Scan for nearby networks, capture a WPA handshake, and crack it using a dictionary attack.</p>
+                        <button class="btn-play">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                            Run Tool
+                        </button>
+                    </div>
+                </div>
+
+                <div class="arcade-card reveal hoverable" style="transition-delay: 0.6s;" onclick="openGame('beef_sim.html', 'BeEF Dashboard')">
+                    <div class="arcade-inner">
+                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline><polyline points="7.5 19.79 7.5 14.6 3 12"></polyline><polyline points="21 12 16.5 14.6 16.5 19.79"></polyline><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <h3>BeEF</h3>
+                        <p>Experience the Browser Exploitation Framework. Hook a victim's browser session and deploy simulated payloads directly to their screen.</p>
+                        <button class="btn-play">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            Access Dashboard
+                        </button>
+                    </div>
+                </div>
+                <div class="arcade-card reveal hoverable" style="transition-delay: 0.8s;" onclick="openGame('emoji_game.html', 'Emoji Guesser')">
+                    <div class="arcade-inner">
+                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                        <h3>Emoji Guesser</h3>
+                        <p>Have some fun! Guess the popular movies and songs based on a set of emojis before the timer runs out.</p>
+                        <button class="btn-play">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            Play Game
+                        </button>
+                    </div>
+                </div>
+                <div class="arcade-card reveal hoverable" style="transition-delay: 1s;" onclick="openGame('puzzle_game.html', 'Sliding Puzzle')">
+                    <div class="arcade-inner">
+                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+                        <h3>Sliding Puzzle</h3>
+                        <p>Challenge yourself! Scramble and slide futuristic tech-themed 4x4 images to restore them to perfection.</p>
+                        <button class="btn-play">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            Start Puzzle
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FULLSCREEN GAME MODAL -->
+    <div id="game-modal" class="game-modal">
+        <div class="modal-header">
+            <div class="modal-title" id="modal-title">SYSTEM.MODULE</div>
+            <button class="btn-close-modal hoverable" onclick="closeGame()">CLOSE SIMULATION</button>
+        </div>
+        <div class="modal-content">
+            <div class="modal-loader" id="modal-loader"><div class="spinner"></div> INITIALIZING...</div>
+            <iframe id="game-iframe" title="Interactive Module" allowtransparency="true"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // --- MOUSE TRACKING FOR CANVAS ---
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // --- SCROLL PATH & INTERSECTION OBSERVER ---
+        const scrollPath = document.getElementById('scroll-path');
+        
+        window.addEventListener('scroll', () => {
+            const scrollTotal = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = (window.scrollY / scrollTotal) * 100;
+            scrollPath.style.height = scrollPercent + '%';
+        });
+
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal, .reveal-scale').forEach(el => observer.observe(el));
+        setTimeout(() => document.querySelector('.hero').classList.add('active'), 100);
+
+        // --- 3D CAROUSEL LOGIC ---
+        let currentIndex = 1;
+        const totalCards = 3;
+        
+        function rotateCarousel(direction) {
+            currentIndex += direction;
+            if (currentIndex > totalCards - 1) currentIndex = 0;
+            if (currentIndex < 0) currentIndex = totalCards - 1;
+            
+            for(let i=0; i<totalCards; i++) {
+                const card = document.getElementById(`card-${i}`);
+                card.className = 'project-card hoverable'; // reset classes
+                
+                if (i === currentIndex) {
+                    card.classList.add('card-center');
+                } else if (i === (currentIndex - 1 + totalCards) % totalCards) {
+                    card.classList.add('card-left');
+                } else {
+                    card.classList.add('card-right');
+                }
+            }
+        }
+
+        // --- NEURAL NETWORK CANVAS ---
+        const canvas = document.getElementById('network-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles = [];
+
+        function resizeCanvas() {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 1; this.vy = (Math.random() - 0.5) * 1;
+                this.radius = Math.random() * 2 + 1;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+                
+                const dx = mouseX - this.x; const dy = mouseY - this.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 150) { this.x -= dx * 0.02; this.y -= dy * 0.02; }
+            }
+            draw() {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--node-color').trim();
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 70; i++) particles.push(new Particle());
+
+        function animateNetwork() {
+            ctx.clearRect(0, 0, width, height);
+            const lineColor = getComputedStyle(document.documentElement).getPropertyValue('--line-color').trim();
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update(); particles[i].draw();
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x; const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 150) {
+                        ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = lineColor; ctx.lineWidth = 1 - dist/150; ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateNetwork);
+        }
+        animateNetwork();
+
+        // --- APP LOGIC & MODALS ---
+        const gameModal = document.getElementById('game-modal');
+        const gameIframe = document.getElementById('game-iframe');
+        const modalLoader = document.getElementById('modal-loader');
+        const modalTitle = document.getElementById('modal-title');
+        
+        function openGame(source, title) {
+            modalTitle.innerText = title;
+            gameModal.classList.add('active');
+            gameIframe.style.display = 'none';
+            modalLoader.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; 
+            
+            gameIframe.onload = function() {
+                modalLoader.style.display = 'none'; 
+                gameIframe.style.display = 'block';
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                try { gameIframe.contentWindow.postMessage({ theme: currentTheme }, '*'); } catch(e) {}
+            };
+            gameIframe.src = source;
+
+            setTimeout(() => {
+                if (modalLoader.style.display !== 'none') {
+                    modalLoader.style.display = 'none'; 
+                    gameIframe.style.display = 'block';
+                }
+            }, 800);
+        }
+
+        function closeGame() {
+            gameModal.classList.remove('active');
+            document.body.style.overflow = 'auto'; 
+            setTimeout(() => gameIframe.src = '', 500);
+        }
+
+        // --- THEME LOGIC ---
+        function toggleTheme() {
+            const root = document.documentElement;
+            const isDark = root.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            root.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            if (gameIframe.contentWindow) gameIframe.contentWindow.postMessage({ theme: newTheme }, '*');
+        }
+
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+</body>
+</html>

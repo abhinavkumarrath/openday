@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wifite Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --term-bg: #09090B;
+            --term-text: #A1A1AA;
+            --term-green: #34D399;
+            --term-red: #F87171;
+            --term-blue: #38BDF8;
+            --term-yellow: #FACC15;
+            --term-purple: #C084FC;
+        }
+
+        [data-theme="light"] {
+            --term-bg: #1E293B;
+            --term-text: #F1F5F9;
+            --term-green: #34D399;
+            --term-red: #F87171;
+            --term-blue: #38BDF8;
+            --term-yellow: #FACC15;
+            --term-purple: #C084FC;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100vh; overflow: hidden;
+            background: transparent; cursor: pointer;
+            font-family: 'JetBrains Mono', monospace; font-size: 14px;
+        }
+
+        .terminal-container {
+            width: 100%; height: 100%; padding: 40px; display: flex; justify-content: center; align-items: center;
+        }
+
+        .terminal-window {
+            width: 100%; max-width: 900px; height: 80%; background: var(--term-bg);
+            border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; overflow: hidden;
+            border: 1px solid rgba(128,128,128,0.2);
+            transition: background 0.5s;
+        }
+
+        .terminal-header {
+            background: rgba(128,128,128,0.1); padding: 12px 20px;
+            display: flex; gap: 8px; border-bottom: 1px solid rgba(128,128,128,0.2);
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background: #FF5F56; } .dot-yellow { background: #FFBD2E; } .dot-green { background: #27C93F; }
+
+        .terminal-body {
+            padding: 20px; flex-grow: 1; overflow-y: auto; color: var(--term-text);
+            line-height: 1.5; white-space: pre-wrap;
+        }
+
+        .txt-green { color: var(--term-green); }
+        .txt-red { color: var(--term-red); }
+        .txt-blue { color: var(--term-blue); }
+        .txt-yellow { color: var(--term-yellow); }
+        .txt-purple { color: var(--term-purple); font-weight: bold; }
+        .txt-white { color: var(--term-text); filter: brightness(1.5); }
+
+        .cursor { display: inline-block; width: 8px; height: 1.2em; background: var(--term-text); vertical-align: middle; animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .input-line { display: flex; gap: 8px; margin-top: 8px; }
+        .input-line input {
+            background: transparent; border: none; color: var(--term-text);
+            font-family: inherit; font-size: inherit; outline: none; flex-grow: 1;
+        }
+
+        .hidden { display: none; }
+        
+        pre { margin: 0; font-family: inherit; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <div class="terminal-container">
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+            </div>
+            <div class="terminal-body" id="term-body">
+                <div id="boot-seq"></div>
+                <div id="main-seq" class="hidden"></div>
+                <div id="input-seq" class="input-line hidden">
+                    <span class="txt-red">select target(s) (1-3)</span> > 
+                    <input type="text" id="term-input" autocomplete="off" autofocus>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Sync
+        window.addEventListener('message', (event) => {
+            if (event.data.theme) document.documentElement.setAttribute('data-theme', event.data.theme);
+        });
+
+        const termBody = document.getElementById('term-body');
+        const bootSeq = document.getElementById('boot-seq');
+        const mainSeq = document.getElementById('main-seq');
+        const inputSeq = document.getElementById('input-seq');
+        const termInput = document.getElementById('term-input');
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        async function typeText(element, text, speed = 20) {
+            for (let i = 0; i < text.length; i++) {
+                element.innerHTML += text.charAt(i);
+                await sleep(speed);
+                termBody.scrollTop = termBody.scrollHeight;
+            }
+        }
+
+        async function initWifite() {
+            await sleep(500);
+            await typeText(bootSeq, "root@kali:~# ", 10);
+            await sleep(300);
+            await typeText(bootSeq, "wifite --kill\n", 50);
+            await sleep(400);
+
+            const banner = `
+  <span class="txt-purple">.               .</span>    
+<span class="txt-purple">.´  ·  .     .  ·  \`.</span>  <span class="txt-green">wifite</span> 2.2.5
+<span class="txt-purple">:  :  :  (¯)  :  :  :</span>  automated wireless auditor
+<span class="txt-purple">\`.  ·  \` /¯\\ ´  ·  .´</span>  https://github.com/derv82/wifite2
+  <span class="txt-purple">\`     /¯¯¯\\     ´</span>    
+
+`;
+            bootSeq.innerHTML += banner;
+            await sleep(500);
+            
+            bootSeq.innerHTML += `[<span class="txt-green">+</span>] initializing... \n`; await sleep(400);
+            bootSeq.innerHTML += `[<span class="txt-green">+</span>] checking for conflicting processes...\n`; await sleep(300);
+            bootSeq.innerHTML += `[<span class="txt-green">+</span>] killing NetworkManager, wpa_supplicant...\n`; await sleep(500);
+            bootSeq.innerHTML += `[<span class="txt-green">+</span>] putting interface wlan0 into monitor mode... <span class="txt-green">wlan0mon</span>\n`; await sleep(600);
+            bootSeq.innerHTML += `[<span class="txt-green">+</span>] ready\n\n`; await sleep(500);
+            
+            bootSeq.innerHTML += `[<span class="txt-yellow">*</span>] scanning for networks. <span class="txt-text">(Ctrl+C to stop)</span>...\n\n`;
+            await sleep(1000);
+            
+            mainSeq.classList.remove('hidden');
+            
+            const networks = [
+                `   NUM ESSID                 CH  ENCR  POWER  WPS?  CLIENT\n`,
+                `   --- --------------------  --  ----  -----  ----  ------\n`,
+                `[<span class="txt-green">1</span>]  <span class="txt-white">Campus_Secure_WiFi</span>    6   WPA2  55db   no    2\n`,
+                `[<span class="txt-green">2</span>]  <span class="txt-white">IoT_Lab_Router</span>        11  WPA2  48db   no    1\n`,
+                `[<span class="txt-green">3</span>]  <span class="txt-white">Student_Guest</span>         1   WPA2  21db   no    5\n\n`
+            ];
+
+            for(let n of networks) {
+                mainSeq.innerHTML += n;
+                await sleep(300);
+            }
+            
+            await sleep(500);
+            inputSeq.classList.remove('hidden');
+            termInput.focus();
+        }
+
+        termInput.addEventListener('keypress', async function(e) {
+            if (e.key === 'Enter') {
+                const val = termInput.value.trim();
+                inputSeq.classList.add('hidden');
+                mainSeq.innerHTML += `<span class="txt-red">select target(s) (1-3)</span> > ${val}\n\n`;
+                
+                if(val === '1' || val === '2' || val === '3') {
+                    await runAttack(val);
+                } else {
+                    mainSeq.innerHTML += `<span class="txt-red">[!] Invalid selection.</span>\n`;
+                    await sleep(1000);
+                    location.reload();
+                }
+            }
+        });
+
+        async function runAttack(targetNum) {
+            const targets = ["", "Campus_Secure_WiFi", "IoT_Lab_Router", "Student_Guest"];
+            const target = targets[targetNum];
+            
+            mainSeq.innerHTML += `[<span class="txt-green">+</span>] selected <span class="txt-green">1</span> target: <span class="txt-white">${target}</span>\n\n`;
+            await sleep(1000);
+            
+            mainSeq.innerHTML += `[<span class="txt-green">0:00:00</span>] starting WPA handshake capture on <span class="txt-white">${target}</span>...\n`; await sleep(1000);
+            mainSeq.innerHTML += `[<span class="txt-green">0:00:01</span>] listening for handshake...\n`; await sleep(1200);
+            mainSeq.innerHTML += `[<span class="txt-green">0:00:02</span>] sending deauth to 1 client to force handshake...\n`; await sleep(1500);
+            mainSeq.innerHTML += `[<span class="txt-green">0:00:04</span>] <span class="txt-green">captured WPA handshake!</span>\n\n`; await sleep(1000);
+            
+            mainSeq.innerHTML += `[<span class="txt-green">+</span>] starting dictionary attack on handshake using wordlist <span class="txt-white">rockyou.txt</span>...\n`; await sleep(1000);
+            
+            let count = 1000;
+            const progress = document.createElement('span');
+            mainSeq.appendChild(progress);
+            
+            for(let i=0; i<30; i++) {
+                count += Math.floor(Math.random() * 500);
+                progress.innerHTML = `[<span class="txt-yellow">*</span>] trying passwords... [ ${count} / 14344391 ]\r`;
+                await sleep(50);
+            }
+            
+            progress.remove();
+            mainSeq.innerHTML += `[<span class="txt-green">+</span>] <span class="txt-green">cracked password!</span>\n\n`; await sleep(500);
+            
+            let password = targetNum === '2' ? "admin1234" : "password123";
+            
+            mainSeq.innerHTML += `[<span class="txt-green">+</span>] ESSID: <span class="txt-white">${target}</span>\n`;
+            mainSeq.innerHTML += `[<span class="txt-green">+</span>] KEY:   <span class="txt-red" style="font-size: 1.5em; background: rgba(255,0,0,0.1); padding: 2px 8px; border-radius: 4px;">${password}</span>\n\n`;
+            
+            await sleep(1000);
+            mainSeq.innerHTML += `[<span class="txt-green">+</span>] saved to cracked.txt\n`;
+            mainSeq.innerHTML += `[<span class="txt-green">+</span>] finished.\n`;
+        }
+
+        initWifite();
+    </script>
+</body>
+</html>

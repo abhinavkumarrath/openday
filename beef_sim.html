@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeEF Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --beef-bg: #1A1A1A;
+            --beef-panel: #2D2D2D;
+            --beef-border: #404040;
+            --beef-text: #E0E0E0;
+            --beef-primary: #C52222; /* Red theme for BeEF */
+            --beef-hover: #3A3A3A;
+            --beef-green: #28A745;
+        }
+
+        [data-theme="light"] {
+            --beef-bg: #F4F6F8;
+            --beef-panel: #FFFFFF;
+            --beef-border: #E0E0E0;
+            --beef-text: #333333;
+            --beef-primary: #D32F2F;
+            --beef-hover: #F0F0F0;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100vh; overflow: hidden;
+            background: transparent; cursor: auto;
+            font-family: 'Outfit', sans-serif; color: var(--beef-text);
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        .dashboard {
+            width: 95%; max-width: 1200px; height: 85%;
+            background: var(--beef-bg); border-radius: 8px; overflow: hidden;
+            display: flex; flex-direction: column;
+            border: 1px solid var(--beef-border); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: background 0.5s;
+        }
+
+        /* HEADER */
+        .header {
+            background: var(--beef-panel); padding: 15px 25px;
+            border-bottom: 2px solid var(--beef-primary);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .header h1 span { color: var(--beef-primary); font-weight: 900; }
+        
+        .main-area { display: flex; flex-grow: 1; overflow: hidden; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 300px; background: var(--beef-panel); border-right: 1px solid var(--beef-border);
+            display: flex; flex-direction: column;
+        }
+        .sidebar-title { padding: 15px; font-weight: bold; border-bottom: 1px solid var(--beef-border); font-size: 0.9rem; text-transform: uppercase; color: var(--beef-text); opacity: 0.7; }
+        
+        .hook-group { padding: 10px 0; }
+        .hook-header { padding: 5px 15px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .hook-header .status { width: 10px; height: 10px; border-radius: 50%; background: var(--beef-green); }
+        
+        .hook-item {
+            padding: 10px 15px 10px 40px; font-size: 0.9rem; cursor: pointer;
+            display: flex; align-items: center; gap: 10px; transition: 0.2s;
+        }
+        .hook-item:hover, .hook-item.active { background: var(--beef-hover); border-left: 3px solid var(--beef-primary); }
+
+        /* CONTENT AREA */
+        .content { flex-grow: 1; display: flex; flex-direction: column; background: var(--beef-bg); }
+        .content-placeholder { flex-grow: 1; display: flex; justify-content: center; align-items: center; opacity: 0.5; font-size: 1.2rem; }
+        
+        .module-view { display: none; flex-direction: column; height: 100%; }
+        
+        .tabs { display: flex; border-bottom: 1px solid var(--beef-border); background: var(--beef-panel); }
+        .tab { padding: 12px 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
+        .tab:hover { background: var(--beef-hover); }
+        .tab.active { border-bottom-color: var(--beef-primary); color: var(--beef-primary); }
+
+        .module-body { padding: 25px; overflow-y: auto; flex-grow: 1; }
+        
+        /* COMMANDS TREE */
+        .cmd-grid { display: grid; grid-template-columns: 250px 1fr; gap: 20px; height: 100%; }
+        
+        .cmd-list { border-right: 1px solid var(--beef-border); overflow-y: auto; }
+        .cmd-category { font-weight: bold; padding: 10px; border-bottom: 1px solid var(--beef-border); background: var(--beef-panel); margin-bottom: 5px;}
+        .cmd-item { padding: 8px 10px 8px 20px; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
+        .cmd-item:hover, .cmd-item.active { background: var(--beef-hover); color: var(--beef-primary); }
+
+        .cmd-exec { padding: 0 20px; }
+        .cmd-exec h2 { margin-top: 0; font-size: 1.2rem; margin-bottom: 10px; }
+        .cmd-desc { font-size: 0.9rem; opacity: 0.8; margin-bottom: 25px; line-height: 1.5; }
+        
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; font-weight: bold; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid var(--beef-border); background: var(--beef-panel); color: var(--beef-text); border-radius: 4px; font-family: inherit; }
+        
+        .btn-exec { background: var(--beef-primary); color: white; border: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s; font-family: inherit; }
+        .btn-exec:hover { filter: brightness(1.2); }
+
+        /* MODAL (Fake Victim Screen) */
+        .victim-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .victim-screen {
+            width: 800px; height: 500px; background: white; border-radius: 8px;
+            box-shadow: 0 0 40px rgba(0,0,0,1); display: flex; flex-direction: column; overflow: hidden;
+            position: relative;
+        }
+        .v-browser-bar { background: #E0E0E0; padding: 10px; display: flex; gap: 8px; align-items: center; }
+        .v-dot { width: 12px; height: 12px; border-radius: 50%; background: #999; }
+        .v-url { flex-grow: 1; background: white; padding: 5px 10px; border-radius: 4px; color: #333; font-size: 0.8rem; margin-left: 10px; }
+        .v-content { flex-grow: 1; display: flex; justify-content: center; align-items: center; color: #333; font-family: sans-serif; background: #f9f9f9; }
+        
+        .alert-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; border: 1px solid #ccc; border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: 300px; text-align: center;
+            display: none; flex-direction: column; overflow: hidden;
+        }
+        .alert-text { padding: 20px; font-size: 0.9rem; color: #333; }
+        .alert-btn { background: #0078D7; color: white; border: none; padding: 10px; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="header">
+            <h1><span>BeEF</span> Browser Exploitation Framework</h1>
+            <div style="font-size: 0.9rem; opacity: 0.7;">Logged in as: beef</div>
+        </div>
+        <div class="main-area">
+            
+            <div class="sidebar">
+                <div class="sidebar-title">Hooked Browsers</div>
+                <div class="hook-group">
+                    <div class="hook-header"><div class="status"></div> Online Browsers (1)</div>
+                    <div class="hook-item" id="hook-victim" onclick="selectVictim()">
+                        🖥️ 192.168.1.10 (Chrome)
+                    </div>
+                </div>
+                <div class="hook-group" style="opacity:0.5;">
+                    <div class="hook-header"><div class="status" style="background:#555;"></div> Offline Browsers (0)</div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="content-placeholder" id="placeholder">Select a hooked browser to view details</div>
+                
+                <div class="module-view" id="module-view">
+                    <div class="tabs">
+                        <div class="tab">Details</div>
+                        <div class="tab">Logs</div>
+                        <div class="tab active">Commands</div>
+                        <div class="tab">Network</div>
+                    </div>
+                    <div class="module-body">
+                        
+                        <div class="cmd-grid">
+                            <div class="cmd-list">
+                                <div class="cmd-category">Browser</div>
+                                <div class="cmd-item">Hooked Domain</div>
+                                <div class="cmd-item">Webcam Access</div>
+                                
+                                <div class="cmd-category">Social Engineering</div>
+                                <div class="cmd-item active">Create Alert Dialog</div>
+                                <div class="cmd-item">Fake Flash Update</div>
+                                <div class="cmd-item">Google Phishing</div>
+                                
+                                <div class="cmd-category">Exploits</div>
+                                <div class="cmd-item">Execute Shellcode</div>
+                            </div>
+                            
+                            <div class="cmd-exec">
+                                <h2>Create Alert Dialog</h2>
+                                <p class="cmd-desc">This module will display a standard alert dialog box in the victim's hooked browser. This can be used for social engineering or verifying execution.</p>
+                                
+                                <div class="input-group">
+                                    <label>Alert Text:</label>
+                                    <input type="text" id="alert-input" value="Your session has expired. Please log in again.">
+                                </div>
+                                
+                                <button class="btn-exec" onclick="executePayload()">Execute Payload</button>
+                                
+                                <div id="exec-status" style="margin-top:20px; color:var(--beef-green); display:none; font-weight:bold;">
+                                    [+] Command sent to victim successfully.
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- VICTIM SCREEN MODAL -->
+    <div class="victim-modal" id="victim-modal">
+        <div style="color:white; position:absolute; top: 20px; font-weight:bold; letter-spacing:2px;">VICTIM'S SCREEN SIMULATION</div>
+        <div class="victim-screen">
+            <div class="v-browser-bar">
+                <div class="v-dot"></div><div class="v-dot"></div><div class="v-dot"></div>
+                <div class="v-url">http://vulnerable-campus-site.com</div>
+            </div>
+            <div class="v-content">
+                <h1>Campus Portal</h1>
+            </div>
+            <div class="alert-box" id="v-alert">
+                <div class="alert-text" id="v-alert-text"></div>
+                <button class="alert-btn" onclick="closeVictim()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('message', (event) => {
+            if (event.data.theme) document.documentElement.setAttribute('data-theme', event.data.theme);
+        });
+
+        function selectVictim() {
+            document.getElementById('hook-victim').classList.add('active');
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('module-view').style.display = 'flex';
+        }
+
+        function executePayload() {
+            const text = document.getElementById('alert-input').value;
+            document.getElementById('exec-status').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('victim-modal').style.display = 'flex';
+                document.getElementById('v-alert').style.display = 'flex';
+                document.getElementById('v-alert-text').innerText = text;
+            }, 1000);
+        }
+
+        function closeVictim() {
+            document.getElementById('victim-modal').style.display = 'none';
+            document.getElementById('v-alert').style.display = 'none';
+            document.getElementById('exec-status').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

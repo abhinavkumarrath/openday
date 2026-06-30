@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/openday/:path*", "destination": "https://your-new-app.vercel.app/:path*" }
+  ]
+}

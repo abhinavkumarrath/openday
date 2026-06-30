@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Quiz Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-panel: rgba(255, 255, 255, 0.85);
+            --bg-panel-solid: #FFFFFF;
+            --border-subtle: rgba(0, 0, 0, 0.1);
+            --border-strong: rgba(0, 0, 0, 0.2);
+            --border-glow: rgba(79, 70, 229, 0.3);
+            
+            --text-primary: #09090B;
+            --text-secondary: #52525B;
+            --text-tertiary: #A3A3A3;
+            
+            --accent-brand: #4F46E5;
+            --accent-bright: #3B82F6;
+            --accent-red: #EF4444;
+            --accent-green: #10B981;
+            
+            --shadow-float: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-panel: rgba(18, 18, 20, 0.6);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.2);
+            --border-glow: rgba(56, 189, 248, 0.3);
+            
+            --text-primary: #FAFAFA;
+            --text-secondary: #A1A1AA;
+            --text-tertiary: #71717A;
+            
+            --accent-brand: #38BDF8;
+            --accent-bright: #818CF8;
+            
+            --shadow-float: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100vh; overflow-x: hidden;
+            background: transparent !important;
+            cursor: auto !important;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-primary);
+            display: flex; flex-direction: column; align-items: center;
+            transition: color 0.5s;
+        }
+
+        .app-container {
+            width: 100%; max-width: 1200px; z-index: 1;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 40px 20px; box-sizing: border-box;
+        }
+
+        /* --- LANDING PAGE --- */
+        #landing-page {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 80vh; text-align: center; animation: fadeIn 0.8s ease-out;
+        }
+
+        .landing-title {
+            font-size: 5rem; font-weight: 900; margin: 0 0 16px 0; letter-spacing: -2px;
+            font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+            text-shadow: 0 0 20px var(--border-glow);
+        }
+
+        .landing-subtitle {
+            font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 48px;
+            font-weight: 400; max-width: 600px; line-height: 1.6;
+        }
+
+        .btn-start {
+            padding: 16px 48px; font-size: 1.1rem; border-radius: 4px;
+            background: var(--text-primary); color: var(--bg-panel);
+            border: none; cursor: pointer; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 0 15px var(--border-glow); transition: 0.3s;
+        }
+        .btn-start:hover { transform: translateY(-3px); box-shadow: 0 0 25px var(--accent-brand); opacity: 0.9; }
+
+        /* --- GAME PAGE --- */
+        #game-page {
+            display: none; flex-direction: column; align-items: center;
+            width: 100%; animation: fadeIn 0.8s ease-out;
+        }
+
+        header { margin-bottom: 30px; text-align: center; }
+        header h1 { font-size: 2.5rem; margin: 0; font-weight: 900; letter-spacing: -0.5px; font-family: 'JetBrains Mono', monospace; }
+
+        .game-container {
+            display: flex; flex-direction: column; align-items: center;
+            background: var(--bg-panel); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle); padding: 40px; border-radius: 24px;
+            box-shadow: var(--shadow-float); width: 100%; max-width: 600px; transition: 0.3s;
+        }
+
+        .wheel-wrapper {
+            position: relative; margin-bottom: 40px; width: 400px; height: 400px;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        canvas {
+            border-radius: 50%; box-shadow: 0 0 30px var(--border-glow), inset 0 0 20px rgba(0,0,0,0.1);
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+            border: 4px solid var(--border-subtle);
+        }
+
+        .pointer {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent;
+            border-top: 40px solid var(--accent-red); z-index: 10;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .center-circle {
+            position: absolute; width: 60px; height: 60px;
+            background: var(--text-primary); border-radius: 50%;
+            border: 3px solid var(--border-strong); z-index: 5;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .btn-spin {
+            padding: 16px 40px; border: none; border-radius: 4px; cursor: pointer;
+            font-weight: 700; font-size: 1.1rem; transition: 0.3s; font-family: 'JetBrains Mono', monospace;
+            background: var(--text-primary); color: var(--bg-panel); box-shadow: 0 0 15px var(--border-glow);
+        }
+        .btn-spin:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 0 25px var(--accent-brand); opacity: 0.9; }
+        .btn-spin:disabled { background: var(--border-strong); color: var(--text-tertiary); cursor: pointer; transform: none; box-shadow: none; }
+
+        /* --- QUESTION MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(12px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+
+        .modal-content {
+            background: var(--bg-panel); border: 1px solid var(--border-subtle);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            padding: 40px; border-radius: 24px; max-width: 800px; width: 90%;
+            box-shadow: var(--shadow-float); transform: scale(0.95) translateY(10px);
+            transition: 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            display: flex; flex-direction: column;
+        }
+        .modal-overlay.show .modal-content { transform: scale(1) translateY(0); }
+
+        .question-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 16px; }
+        .question-number { color: var(--text-secondary); font-size: 1.1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; }
+        .difficulty-badge { padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+        .difficulty-badge.easy { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .difficulty-badge.hard { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
+        .question-text { font-size: 1.5rem; font-weight: 700; margin-bottom: 32px; line-height: 1.4; color: var(--text-primary); text-align: center; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+        @media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
+
+        .option-btn {
+            background: rgba(0,0,0,0.1); border: 1px solid var(--border-strong);
+            color: var(--text-primary); padding: 20px; border-radius: 12px;
+            font-size: 1.05rem; font-weight: 500; text-align: left;
+            transition: 0.2s; cursor: pointer; font-family: inherit;
+        }
+        [data-theme="dark"] .option-btn { background: rgba(255,255,255,0.05); }
+        .option-btn:hover:not(:disabled) { border-color: var(--accent-brand); background: rgba(79,70,229,0.1); box-shadow: 0 0 15px var(--border-glow); }
+        
+        .option-btn.correct { background: rgba(16, 185, 129, 0.1); border-color: var(--accent-green); color: var(--accent-green); font-weight: 700; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+        .option-btn.wrong { background: rgba(239, 68, 68, 0.1); border-color: var(--accent-red); color: var(--accent-red); opacity: 0.7; }
+
+        .result-feedback { text-align: center; font-size: 1.25rem; font-weight: 700; min-height: 30px; margin-bottom: 24px; opacity: 0; transition: opacity 0.3s; font-family: 'JetBrains Mono', monospace; }
+        .result-feedback.show { opacity: 1; }
+        .text-success { color: var(--accent-green); }
+        .text-danger { color: var(--accent-red); }
+
+        .btn-close {
+            background: var(--text-primary); color: var(--bg-panel);
+            border: none; padding: 14px 40px; font-size: 1rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+            border-radius: 4px; align-self: center; display: none; cursor: pointer; transition: 0.2s;
+        }
+        .btn-close:hover { opacity: 0.9; box-shadow: 0 0 15px var(--text-primary); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div id="landing-page">
+            <h1 class="landing-title">CYBER QUIZ</h1>
+            <p class="landing-subtitle">50 Scenarios. Test your digital defense knowledge.</p>
+            <button class="btn-start hoverable" onclick="startGame()">ENTER CHALLENGE</button>
+        </div>
+
+        <div id="game-page">
+            <header><h1>SYSTEM.QUIZ</h1></header>
+            <div class="game-container">
+                <div class="wheel-wrapper">
+                    <div class="pointer"></div>
+                    <canvas id="wheelCanvas" width="400" height="400"></canvas>
+                    <div class="center-circle"></div>
+                </div>
+                <button id="spinBtn" class="btn-spin hoverable" onclick="spinWheel()">SPIN LOGIC</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal-content">
+            <div class="question-header">
+                <div class="question-number" id="qNumber">Question 1</div>
+                <div class="difficulty-badge easy" id="qDifficulty">EASY</div>
+            </div>
+            <div class="question-text" id="qText">Loading...</div>
+            <div class="options-grid" id="optionsContainer">
+                <button class="option-btn hoverable" onclick="checkAnswer(0)" id="opt0">Opt 1</button>
+                <button class="option-btn hoverable" onclick="checkAnswer(1)" id="opt1">Opt 2</button>
+                <button class="option-btn hoverable" onclick="checkAnswer(2)" id="opt2">Opt 3</button>
+                <button class="option-btn hoverable" onclick="checkAnswer(3)" id="opt3">Opt 4</button>
+            </div>
+            <div class="result-feedback" id="resultFeedback"></div>
+            <button id="closeBtn" class="btn-close hoverable" onclick="closeModal()">CONTINUE</button>
+        </div>
+    </div>
+
+    <script>
+        // Track mouse and send to parent for cursor sync and background interaction
+        window.addEventListener('mousemove', (e) => {
+            window.parent.postMessage({ type: 'mousemove', clientX: e.clientX, clientY: e.clientY }, '*');
+        });
+        window.addEventListener('mousedown', () => window.parent.postMessage({ type: 'mousedown' }, '*'));
+        window.addEventListener('mouseup', () => window.parent.postMessage({ type: 'mouseup' }, '*'));
+
+        // Theme Sync Logic
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.theme) {
+                document.documentElement.setAttribute('data-theme', event.data.theme);
+            }
+        });
+
+        const questions = [
+            // 30 EASY
+            { difficulty: "Easy", q: "What does 'Phishing' mean?", options: ["Fishing for private data online", "Sending fake emails to steal information", "A firewall feature blocking ads", "Downloading malicious music files"], correct: 1 },
+            { difficulty: "Easy", q: "What is a 'Firewall'?", options: ["A physical wall to prevent server fires", "A system that monitors and controls network traffic", "A type of computer virus", "An encrypted password manager"], correct: 1 },
+            { difficulty: "Easy", q: "What does 'VPN' stand for?", options: ["Virtual Private Network", "Visual Processing Node", "Verified Public Network", "Virtual Password Notation"], correct: 0 },
+            { difficulty: "Easy", q: "What is 'Malware'?", options: ["Malfunctioning hardware", "A safe web browser", "Malicious software designed to harm systems", "A security patching tool"], correct: 2 },
+            { difficulty: "Easy", q: "What does the 'S' in HTTPS stand for?", options: ["System", "Secure", "Server", "Speed"], correct: 1 },
+            { difficulty: "Easy", q: "What is a 'DDoS' attack?", options: ["Deleting Data on Servers", "Distributed Denial of Service", "Direct Download of Software", "Data Decryption System"], correct: 1 },
+            { difficulty: "Easy", q: "What is 'Social Engineering'?", options: ["Building social networks", "Manipulating people psychologically to get info", "Programming social media bots", "Designing user-friendly websites"], correct: 1 },
+            { difficulty: "Easy", q: "What is a 'Brute Force' attack?", options: ["Physically destroying a server", "Guessing passwords by trying every combination", "Spamming an inbox with emails", "Bypassing a firewall using hardware"], correct: 1 },
+            { difficulty: "Easy", q: "What is 'Two-Factor Authentication (2FA)'?", options: ["Using two different passwords", "Logging in from two devices", "An extra layer of security requiring two forms of ID", "Sharing your account with a friend"], correct: 2 },
+            { difficulty: "Easy", q: "What does 'Ransomware' do?", options: ["Speeds up your computer", "Encrypts files and demands money to unlock them", "Steals your webcam feed", "Blocks all incoming emails"], correct: 1 },
+            { difficulty: "Easy", q: "What is a 'Keylogger'?", options: ["A tool to generate secure passwords", "Software that secretly records your keystrokes", "A physical key to lock server rooms", "An encryption algorithm"], correct: 1 },
+            { difficulty: "Easy", q: "What does 'SQL Injection' attack?", options: ["A website's database", "The user's monitor", "The Wi-Fi router", "A computer's cooling system"], correct: 0 },
+            { difficulty: "Easy", q: "What is a 'White Hat' hacker?", options: ["A cybercriminal", "A hacker who wears a specific hat", "An ethical hacker who secures systems", "A hacker who only attacks on weekends"], correct: 2 },
+            { difficulty: "Easy", q: "What is a 'Black Hat' hacker?", options: ["A malicious cybercriminal", "A network administrator", "A government agent", "A hardware engineer"], correct: 0 },
+            { difficulty: "Easy", q: "What is a 'Botnet'?", options: ["A robot that plays video games", "A network of infected computers controlled as a group", "A secure messaging app", "A firewall for home networks"], correct: 1 },
+            { difficulty: "Easy", q: "What is 'Encryption'?", options: ["Deleting files permanently", "Scrambling data so only authorized parties can read it", "Connecting two computers together", "Bypassing passwords"], correct: 1 },
+            { difficulty: "Easy", q: "What is an 'IP Address'?", options: ["Internet Protocol - A unique string of numbers identifying a device", "Internal Password - A secure code for admins", "Intellectual Property - Copyrighted software", "Integrated Processor - A CPU feature"], correct: 0 },
+            { difficulty: "Easy", q: "What is a 'Trojan Horse'?", options: ["A fast computer virus", "Malware disguised as legitimate software", "A protective firewall", "An outdated operating system"], correct: 1 },
+            { difficulty: "Easy", q: "What is 'Spyware'?", options: ["Software that secretly monitors your behavior", "A tool for fixing slow Wi-Fi", "An encrypted email service", "A type of physical security camera"], correct: 0 },
+            { difficulty: "Easy", q: "What is a 'Password Manager'?", options: ["A person who resets passwords", "A tool that securely stores and manages passwords", "A virus that steals passwords", "A physical notebook"], correct: 1 },
+            { difficulty: "Easy", q: "What does 'Incognito Mode' actually hide?", options: ["Your location from the government", "Your IP address from websites", "Your browsing history on your local device only", "Your identity from your Internet Provider"], correct: 2 },
+            { difficulty: "Easy", q: "What is 'Adware'?", options: ["Software used to design advertisements", "Software that automatically displays unwanted ads", "A premium ad-free browser", "A tool to block all viruses"], correct: 1 },
+            { difficulty: "Easy", q: "What does 'Patching' mean?", options: ["Covering your webcam with tape", "Applying an update to software to fix vulnerabilities", "Connecting cables in a server room", "Bypassing a security system"], correct: 1 },
+            { difficulty: "Easy", q: "What are 'Biometrics'?", options: ["Measuring computer performance", "Using physical characteristics (fingerprints) for identification", "A type of computer virus", "Encrypting biological data"], correct: 1 },
+            { difficulty: "Easy", q: "What is 'Spear Phishing'?", options: ["Catching fish with a spear", "Highly targeted phishing attacks aimed at specific individuals", "A bulk spam email sent to millions", "A firewall configuration"], correct: 1 },
+            { difficulty: "Easy", q: "What is the 'Dark Web'?", options: ["A website with a dark theme", "The internet at night time", "A hidden part of the internet requiring special software", "An outdated version of the internet"], correct: 2 },
+            { difficulty: "Easy", q: "What is 'Spam'?", options: ["Canned meat", "A secure password format", "Unsolicited, unwanted digital communication sent in bulk", "A computer network protocol"], correct: 2 },
+            { difficulty: "Easy", q: "What is a website 'Cookie'?", options: ["A delicious baked good", "A small file placed on your device to remember preferences", "A virus that tracks your location", "A type of computer hardware"], correct: 1 },
+            { difficulty: "Easy", q: "What is 'Shoulder Surfing'?", options: ["Looking over someone's shoulder to steal their password", "A surfing technique", "Carrying a laptop on your shoulder", "Bypassing a router"], correct: 0 },
+            { difficulty: "Easy", q: "What is a 'Computer Virus'?", options: ["A biological illness that affects humans", "Malicious code that replicates by attaching to clean files", "A slow internet connection", "A broken computer screen"], correct: 1 },
+            
+            // 20 HARD
+            { difficulty: "Hard", q: "What is a 'Zero-Day' vulnerability?", options: ["A virus that deletes everything in 0 days", "A flaw unknown to the software creator with no patch available", "A password that expires at midnight", "A network that has no downtime"], correct: 1 },
+            { difficulty: "Hard", q: "What is a 'Rootkit'?", options: ["Malware giving a hacker hidden, administrative access", "A tool to root Android phones", "A starter kit for hackers", "A physical tool to open servers"], correct: 0 },
+            { difficulty: "Hard", q: "What does 'Man-in-the-Middle' mean?", options: ["The mediator in a tech dispute", "A router placed in the center of a room", "Secretly intercepting communication between two parties", "A type of computer processor"], correct: 2 },
+            { difficulty: "Hard", q: "What is a 'Honeypot'?", options: ["A decoy system set up to lure and study cyber attackers", "A folder storing valuable passwords", "A trap for capturing spam emails", "A very secure firewall"], correct: 0 },
+            { difficulty: "Hard", q: "What is 'Steganography'?", options: ["Studying dinosaurs", "Hiding secret data inside an ordinary image or file", "Encrypting text into random symbols", "Cracking passwords using math"], correct: 1 },
+            { difficulty: "Hard", q: "What is 'Cross-Site Scripting (XSS)'?", options: ["Translating a website to another language", "Injecting malicious client-side scripts into trusted websites", "Linking two secure websites together", "Bypassing a network firewall"], correct: 1 },
+            { difficulty: "Hard", q: "What is a 'Rainbow Table' used for?", options: ["Designing colorful user interfaces", "Cracking password hashes very quickly using precomputed tables", "Sorting IP addresses by region", "Encrypting Wi-Fi networks"], correct: 1 },
+            { difficulty: "Hard", q: "What is 'Salting' in cryptography?", options: ["Corrupting data so it can't be read", "Adding random data to a password before hashing it", "Removing encryption from a file", "Storing passwords in plain text"], correct: 1 },
+            { difficulty: "Hard", q: "What is a 'Logic Bomb'?", options: ["A very complicated math problem", "Malicious code that lies dormant until triggered by a specific event", "A bomb defusal simulator", "A tool that crashes firewalls"], correct: 1 },
+            { difficulty: "Hard", q: "What is the 'Principle of Least Privilege'?", options: ["Paying employees the lowest salary", "Giving users only the exact minimum level of access they need", "Never giving out admin passwords", "Using the weakest encryption possible"], correct: 1 },
+            { difficulty: "Hard", q: "What is 'Asymmetric Encryption'?", options: ["Encryption that looks ugly", "Using the exact same key to lock and unlock data", "Using two different keys: a public key to encrypt and a private key to decrypt", "A method that cannot be decrypted"], correct: 2 },
+            { difficulty: "Hard", q: "What is a 'Buffer Overflow'?", options: ["When a computer gets too hot", "Overloading a program's memory space to inject malicious code", "Having too many tabs open", "A router receiving too much Wi-Fi signal"], correct: 1 },
+            { difficulty: "Hard", q: "What is 'Air-Gapping'?", options: ["Leaving space between servers for cooling", "Using wireless internet instead of cables", "Physically isolating a secure computer from any external networks", "Sending data through radio waves"], correct: 2 },
+            { difficulty: "Hard", q: "What does 'SIEM' stand for?", options: ["System Internet Evaluation Model", "Security Information and Event Management", "Secure Internal Enterprise Machine", "Standard Identity Encryption Method"], correct: 1 },
+            { difficulty: "Hard", q: "What is a 'C2' (Command and Control) server?", options: ["The main router in an office building", "A server that controls cooling systems", "The centralized machine a hacker uses to send commands to a botnet", "A backup server for data"], correct: 2 },
+            { difficulty: "Hard", q: "What is 'Penetration Testing'?", options: ["Testing how hard a laptop casing is", "Authorized, simulated cyber attacks against your own system to find flaws", "Checking Wi-Fi signal strength through walls", "Injecting malware into competitors' systems"], correct: 1 },
+            { difficulty: "Hard", q: "What is 'MAC Spoofing'?", options: ["Making fun of Apple computers", "Changing the factory-assigned hardware address of a network interface", "Creating a fake Wi-Fi hotspot", "Copying someone else's IP address"], correct: 1 },
+            { difficulty: "Hard", q: "What is a 'Digital Signature'?", options: ["Scanning a pen signature to a PDF", "A mathematical scheme used to verify the authenticity of a digital message", "A customized font used in emails", "A password used for banking apps"], correct: 1 },
+            { difficulty: "Hard", q: "What does an 'IDS' do?", options: ["Internet Download System", "Installs Default Software", "Monitors a network for malicious activity (Intrusion Detection System)", "Identifies Deleted Sectors"], correct: 2 },
+            { difficulty: "Hard", q: "What is 'Typosquatting'?", options: ["Sitting too close to the keyboard", "Registering fake domain names that look like popular websites (e.g., gogle.com)", "A type of physical security attack", "Deleting letters from a password"], correct: 1 }
+        ];
+
+        let currentCorrectIndex = -1;
+        let answerRevealed = false;
+
+        const canvas = document.getElementById("wheelCanvas");
+        const ctx = canvas.getContext("2d");
+        const spinBtn = document.getElementById("spinBtn");
+        const radius = canvas.width / 2;
+        const totalSegments = questions.length; 
+        const arcSize = (2 * Math.PI) / totalSegments;
+
+        let currentRotation = 0; 
+        const colors = ["#0070F3", "#EC4899", "#8B5CF6", "#10B981", "#F59E0B", "#3B82F6", "#F43F5E", "#06B6D4", "#14B8A6", "#6366F1"];
+
+        function startGame() {
+            document.getElementById('landing-page').style.display = 'none';
+            document.getElementById('game-page').style.display = 'flex';
+        }
+
+        function drawWheel() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < totalSegments; i++) {
+                const angle = i * arcSize;
+                ctx.beginPath();
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius, angle, angle + arcSize, false);
+                ctx.lineTo(radius, radius);
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "rgba(255,255,255,0.4)";
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(radius, radius);
+                ctx.rotate(angle + arcSize / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 10px 'Outfit', sans-serif";
+                ctx.fillText(i + 1, radius - 6, 4);
+                ctx.restore();
+            }
+        }
+        drawWheel();
+
+        function spinWheel() {
+            spinBtn.disabled = true;
+            spinBtn.innerText = "PROCESSING...";
+            const spinDegrees = Math.floor(Math.random() * 360) + (360 * 8); 
+            currentRotation += spinDegrees;
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(() => {
+                showQuestion(currentRotation);
+                spinBtn.disabled = false;
+                spinBtn.innerText = "SPIN LOGIC";
+            }, 4000);
+        }
+
+        function showQuestion(rotationDegrees) {
+            const actualRotation = rotationDegrees % 360;
+            const pointerAngle = (360 - actualRotation + 270) % 360; 
+            const segmentDegrees = 360 / totalSegments;
+            const winningIndex = Math.floor(pointerAngle / segmentDegrees);
+            
+            const selectedQ = questions[winningIndex];
+            currentCorrectIndex = selectedQ.correct;
+            answerRevealed = false;
+            
+            document.getElementById("qNumber").innerText = `Question ${winningIndex + 1}`;
+            document.getElementById("qText").innerText = selectedQ.q;
+            
+            const badge = document.getElementById("qDifficulty");
+            badge.innerText = selectedQ.difficulty.toUpperCase();
+            badge.className = selectedQ.difficulty === "Easy" ? "difficulty-badge easy" : "difficulty-badge hard";
+            
+            for(let i=0; i<4; i++) {
+                const btn = document.getElementById(`opt${i}`);
+                btn.innerText = selectedQ.options[i];
+                btn.className = "option-btn hoverable";
+                btn.disabled = false;
+            }
+
+            document.getElementById("resultFeedback").className = "result-feedback";
+            document.getElementById("resultFeedback").innerText = "";
+            document.getElementById("closeBtn").style.display = "none";
+            document.getElementById("quizModal").classList.add("show");
+        }
+
+        function checkAnswer(selectedIndex) {
+            if (answerRevealed) return;
+            answerRevealed = true;
+            const feedback = document.getElementById("resultFeedback");
+            
+            for(let i=0; i<4; i++) {
+                const btn = document.getElementById(`opt${i}`);
+                btn.disabled = true;
+                if (i === currentCorrectIndex) btn.classList.add("correct");
+                else if (i === selectedIndex && selectedIndex !== currentCorrectIndex) btn.classList.add("wrong");
+            }
+
+            if (selectedIndex === currentCorrectIndex) {
+                feedback.innerText = "CORRECT";
+                feedback.className = "result-feedback show text-success";
+            } else {
+                feedback.innerText = "INCORRECT";
+                feedback.className = "result-feedback show text-danger";
+            }
+            document.getElementById("closeBtn").style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById("quizModal").classList.remove("show");
+        }
+    </script>
+</body>
+</html>
