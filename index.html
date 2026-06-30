@@ -165,7 +165,7 @@
         .arcade-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px; margin-top: 40px; }
         
         .arcade-card {
-            border-radius: var(--radius-xl); padding: 80px 48px; min-height: 450px;
+            border-radius: var(--radius-xl); padding: 40px 32px; min-height: 520px;
             display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
             position: relative; overflow: hidden; border: 1px solid var(--border-strong); cursor: pointer;
             background: var(--bg-glass); box-shadow: 0 30px 60px rgba(0,0,0,0.4); transition: 0.5s;
@@ -177,9 +177,9 @@
         }
         .arcade-card:hover { transform: translateY(-10px); border-color: transparent; }
         .arcade-card:hover::before { opacity: 0.5; }
-        .arcade-inner { position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px; background: var(--bg-base); border-radius: calc(var(--radius-xl) - 2px); z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 48px; transition: background 0.5s; }
+        .arcade-inner { position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px; background: var(--bg-base); border-radius: calc(var(--radius-xl) - 2px); z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 28px; transition: background 0.5s; }
         
-        .arcade-icon { width: 120px; height: 120px; margin-bottom: 32px; color: var(--text-primary); transition: 0.5s; }
+        .arcade-icon { width: 140px; height: 140px; margin-bottom: 28px; color: var(--text-primary); transition: 0.5s; }
         .arcade-card:hover .arcade-icon { color: var(--accent-cyan); transform: scale(1.1); filter: drop-shadow(0 0 20px var(--border-glow)); }
         
         .arcade-inner h3 { font-size: 2.5rem; font-weight: 900; margin-bottom: 16px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; z-index: 2; }
@@ -363,7 +363,7 @@
                 
                 <div class="arcade-card reveal hoverable" onclick="openGame('hacker_game.html', 'Threat Simulator')">
                     <div class="arcade-inner">
-                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M6 8l4 4-4 4M12 16h6"></path></svg>
+                        <svg class="arcade-icon" width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M6 8l4 4-4 4M12 16h6"></path></svg>
                         <h3>Threat Simulator</h3>
                         <p>Experience an interactive, step-by-step breakdown of how network vulnerabilities are exploited in real time.</p>
                         <button class="btn-play">
@@ -375,7 +375,7 @@
 
                 <div class="arcade-card reveal hoverable" style="transition-delay: 0.2s;" onclick="openGame('quiz_wheel.html', 'Cyber Quiz Engine')">
                     <div class="arcade-inner">
-                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <svg class="arcade-icon" width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                         <h3>Cyber Quiz Wheel</h3>
                         <p>Test your knowledge with 50 tailored cybersecurity questions. Spin the interactive wheel to challenge yourself.</p>
                         <button class="btn-play">
@@ -387,7 +387,7 @@
 
                 <div class="arcade-card reveal hoverable" style="transition-delay: 0.4s;" onclick="openGame('wifite_sim.html', 'Wifite Terminal')">
                     <div class="arcade-inner">
-                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                        <svg class="arcade-icon" width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
                         <h3>Wifite</h3>
                         <p>Simulate an automated wireless attack. Scan for nearby networks, capture a WPA handshake, and crack it using a dictionary attack.</p>
                         <button class="btn-play">
@@ -399,7 +399,7 @@
 
                 <div class="arcade-card reveal hoverable" style="transition-delay: 0.6s;" onclick="openGame('beef_sim.html', 'BeEF Dashboard')">
                     <div class="arcade-inner">
-                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline><polyline points="7.5 19.79 7.5 14.6 3 12"></polyline><polyline points="21 12 16.5 14.6 16.5 19.79"></polyline><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <svg class="arcade-icon" width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline><polyline points="7.5 19.79 7.5 14.6 3 12"></polyline><polyline points="21 12 16.5 14.6 16.5 19.79"></polyline><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                         <h3>BeEF</h3>
                         <p>Experience the Browser Exploitation Framework. Hook a victim's browser session and deploy simulated payloads directly to their screen.</p>
                         <button class="btn-play">
@@ -410,7 +410,7 @@
                 </div>
                 <div class="arcade-card reveal hoverable" style="transition-delay: 0.8s;" onclick="openGame('emoji_game.html', 'Emoji Guesser')">
                     <div class="arcade-inner">
-                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                        <svg class="arcade-icon" width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
                         <h3>Emoji Guesser</h3>
                         <p>Have some fun! Guess the popular movies and songs based on a set of emojis before the timer runs out.</p>
                         <button class="btn-play">
@@ -421,7 +421,7 @@
                 </div>
                 <div class="arcade-card reveal hoverable" style="transition-delay: 1s;" onclick="openGame('puzzle_game.html', 'Sliding Puzzle')">
                     <div class="arcade-inner">
-                        <svg class="arcade-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+                        <svg class="arcade-icon" width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
                         <h3>Sliding Puzzle</h3>
                         <p>Challenge yourself! Scramble and slide futuristic tech-themed 4x4 images to restore them to perfection.</p>
                         <button class="btn-play">
